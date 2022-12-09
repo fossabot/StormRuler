@@ -31,6 +31,171 @@
 namespace Storm
 {
 
+// -----------------------------------------------------------------------------
+
+template<class Elem, class Shape>
+class DenseMatrix;
+
+template<class Elem, size_t... Extents>
+using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
+
+// -----------------------------------------------------------------------------
+
+/// @brief Fixed matrix (rank 1).
+template<class Elem, size_t Extent>
+  requires std::is_object_v<Elem> && (Extent > 0)
+class DenseMatrix<Elem, fixed_shape_t<Extent>> final :
+    public TargetMatrixInterface<DenseMatrix<Elem, fixed_shape_t<Extent>>>
+{
+private:
+
+  STORM_NO_UNIQUE_ADDRESS_ std::array<Elem, Extent> elems_{};
+
+public:
+
+  /// @brief Construct a matrix.
+  constexpr DenseMatrix() = default;
+
+  /// @brief Construct a matrix with elements @p elems.
+  /// @{
+  template<class... Args>
+    requires (sizeof...(Args) == Extent)
+  constexpr explicit DenseMatrix(Args&&... elems)
+      : elems_{Elem{std::forward<Args>(elems)}...}
+  {
+  }
+  template<class Arg>
+  constexpr explicit DenseMatrix(Arg (&&elems)[Extent])
+      : elems_{std::to_array<Elem>(std::forward<Arg (&&)[Extent]>(elems))}
+  {
+  }
+  /// @}
+
+  /// @brief Get the matrix shape.
+  constexpr auto shape() const noexcept
+  {
+    return shp<Extent>();
+  }
+
+  /// @brief Get the matrix element at @p index.
+  /// @{
+  constexpr Elem& operator()(size_t index) noexcept
+  {
+    STORM_ASSERT_(in_range(shape(), index), "Index is out of range!");
+    return elems_[index];
+  }
+  constexpr const Elem& operator()(size_t index) const noexcept
+  {
+    STORM_ASSERT_(in_range(shape(), index), "Index is out of range!");
+    return elems_[index];
+  }
+  /// @}
+
+}; // class DenseMatrix
+
+/// @brief Fixed matrix (multirank).
+template<class Elem, size_t Extent, size_t... RestExtents>
+  requires std::is_object_v<Elem> && (Extent > 0) && (... && (RestExtents > 0))
+class DenseMatrix<Elem, fixed_shape_t<Extent, RestExtents...>> final :
+    public TargetMatrixInterface<
+        DenseMatrix<Elem, fixed_shape_t<Extent, RestExtents...>>>
+{
+private:
+
+  using Slice_ = FixedMatrix<Elem, RestExtents...>;
+  STORM_NO_UNIQUE_ADDRESS_ std::array<Slice_, Extent> slices_{};
+
+public:
+
+  /// @brief Construct a matrix.
+  constexpr DenseMatrix() = default;
+
+  /// @brief Construct a matrix with slices.
+  /// @{
+  template<matrix... Slices>
+    requires (sizeof...(Slices) == Extent)
+  constexpr explicit DenseMatrix(Slices&&... slices)
+      : slices_{Slice_{std::forward<Slices>(slices)}...}
+  {
+  }
+  template<class Arg>
+  constexpr explicit DenseMatrix(Arg (&&slices)[Extent])
+      : slices_{std::to_array<Slice_>(std::forward<Arg (&&)[Extent]>(slices))}
+  {
+  }
+  template<class... Args, size_t SecondExtent>
+    requires (SecondExtent == detail_::first_(RestExtents...))
+  constexpr explicit DenseMatrix(Args (&&... slices)[SecondExtent])
+      : slices_{Slice_{std::forward<Args (&&)[SecondExtent]>(slices)}...}
+  {
+  }
+  /// @}
+
+  /// @brief Get the matrix shape.
+  constexpr auto shape() const noexcept
+  {
+    return shp<Extent, RestExtents...>();
+  }
+
+  /// @brief Get the matrix element at @p indices.
+  /// @{
+  template<class... RestIndices>
+    requires compatible_matrix_indices_v<DenseMatrix, size_t, RestIndices...>
+  constexpr Elem& operator()(size_t index, //
+                             RestIndices... rest_indices) noexcept
+  {
+    STORM_ASSERT_(in_range(shape(), index, rest_indices...),
+                  "Indices are out of range!");
+    return slices_[index](rest_indices...);
+  }
+  template<class... RestIndices>
+    requires compatible_matrix_indices_v<DenseMatrix, size_t, RestIndices...>
+  constexpr const Elem& operator()(size_t index,
+                                   RestIndices... rest_indices) const noexcept
+  {
+    STORM_ASSERT_(in_range(shape(), index, rest_indices...),
+                  "Indices are out of range!");
+    return slices_[index](rest_indices...);
+  }
+  /// @}
+
+}; // class DenseMatrix
+
+template<scalar... Elems>
+  requires (sizeof...(Elems) > 1)
+DenseMatrix(Elems...)
+    -> DenseMatrix<std::common_type_t<std::remove_cvref_t<Elems>...>,
+                   fixed_shape_t<sizeof...(Elems)>>;
+template<matrix... Slices>
+  requires ((sizeof...(Slices) > 1) && compatible_matrices_v<Slices...>)
+DenseMatrix(Slices&&...)
+    -> DenseMatrix<std::common_type_t<matrix_element_t<Slices>...>,
+                   cat_shapes_t<fixed_shape_t<sizeof...(Slices)>,
+                                common_shape_t<matrix_shape_t<Slices>...>>>;
+
+template<class Elem, size_t Extent>
+  requires (!matrix<Elem>)
+DenseMatrix(const Elem (&)[Extent])
+    -> DenseMatrix<std::remove_cvref_t<Elem>, fixed_shape_t<Extent>>;
+template<matrix Slice, size_t Extent>
+DenseMatrix(Slice (&&)[Extent])
+    -> DenseMatrix<matrix_element_t<Slice>,
+                   cat_shapes_t<fixed_shape_t<Extent>, matrix_shape_t<Slice>>>;
+
+template<scalar... Elems, size_t SecondExtent>
+  requires (sizeof...(Elems) > 1)
+DenseMatrix(const Elems (&... _)[SecondExtent]...)
+    -> DenseMatrix<std::common_type_t<std::remove_cvref_t<Elems>...>, //
+                   fixed_shape_t<sizeof...(Elems), SecondExtent>>;
+template<matrix... Slices, size_t SecondExtent>
+  requires ((sizeof...(Slices) > 1) && compatible_matrices_v<Slices...>)
+DenseMatrix(Slices (&&... _)[SecondExtent])
+    -> DenseMatrix<std::common_type_t<matrix_element_t<Slices>...>,
+                   cat_shapes_t<fixed_shape_t<sizeof...(Slices), SecondExtent>,
+                                common_shape_t<matrix_shape_t<Slices>...>>>;
+
+// -----------------------------------------------------------------------------
+
 /// @brief Statically-sized matrix.
 template<class Elem, size_t NumRows, size_t NumCols>
 class StaticMatrix final :
@@ -80,7 +245,7 @@ public:
   /// @brief Matrix shape.
   static constexpr auto shape() noexcept
   {
-    return std::array{NumRows, NumCols};
+    return shp<NumRows, NumCols>();
   }
 
   /// @brief Get the matrix coefficient at @p row_index and @p col_index.

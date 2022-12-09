@@ -240,15 +240,15 @@ using real_t = double;
 /// @brief Complex floating-point type.
 using complex_t = std::complex<real_t>;
 
+/// @brief Size type constant.
+template<size_t Value>
+using size_t_constant = std::integral_constant<size_t, Value>;
+
 /// @brief size_t literal.
 constexpr size_t operator""_sz(unsigned long long arg) noexcept
 {
   return static_cast<size_t>(arg);
 }
-
-/// @brief size_t constant.
-template<size_t Arg>
-using size_t_constant = std::integral_constant<size_t, Arg>;
 
 /// @brief real_t literal.
 constexpr real_t operator""_dp(long double arg) noexcept
@@ -343,6 +343,11 @@ namespace detail_
   constexpr bool in_range_(auto t, auto min, auto max)
   {
     return min <= t && t <= max;
+  }
+
+  constexpr auto first_(auto x, auto...)
+  {
+    return x;
   }
 
   constexpr bool one_of_(auto x, auto... vals)

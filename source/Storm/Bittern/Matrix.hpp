@@ -25,6 +25,7 @@
 #include <Storm/Utils/Index.hpp>
 
 #include <Storm/Bittern/Math.hpp>
+#include <Storm/Bittern/Shape.hpp>
 
 #include <concepts>
 #include <tuple>
@@ -36,26 +37,18 @@ namespace Storm
 
 // -----------------------------------------------------------------------------
 
-/// @brief Shape.
-template<size_t Rank>
-using shape_t = std::array<size_t, Rank>;
-
-/// @brief Matrix shape: instantiation of shape_t.
-template<class MatrixShape>
-concept matrix_shape =
-    requires { std::tuple_size_v<MatrixShape>; } &&
-    (std::tuple_size_v<MatrixShape> != 0) &&
-    std::same_as<MatrixShape, shape_t<std::tuple_size_v<MatrixShape>>>;
-
 /// @brief Matrix: has shape and subscripts.
 template<class Matrix>
 concept matrix = //
     requires(Matrix& mat) {
       // clang-format off
-      { mat.shape() } -> matrix_shape;
+      { mat.shape() } -> shape;
       { std::apply(mat, mat.shape()) } /*-> referenceable */;
       // clang-format on
     };
+
+template<class Scalar>
+concept scalar = (!matrix<Scalar>);
 
 // -----------------------------------------------------------------------------
 
@@ -76,7 +69,7 @@ concept matrix_r = matrix<Matrix> && (matrix_rank_v<Matrix> == Rank);
 template<matrix Matrix>
 constexpr size_t num_rows(Matrix&& mat) noexcept
 {
-  return mat.shape()[0];
+  return std::get<0>(mat.shape());
 }
 
 /// @brief Number of the matrix columns.
@@ -84,7 +77,7 @@ template<matrix Matrix>
   requires (matrix_rank_v<Matrix> >= 2)
 constexpr size_t num_cols(Matrix&& mat) noexcept
 {
-  return mat.shape()[1];
+  return std::get<1>(mat.shape());
 }
 
 // -----------------------------------------------------------------------------
@@ -98,9 +91,8 @@ inline constexpr bool compatible_matrix_indices_v =
     matrix_rank_v<Matrix> == sizeof...(Indices);
 
 /// @brief Check if all indices are in range.
-template<size_t Rank, index... Indices>
-  requires (Rank == sizeof...(Indices))
-constexpr bool in_range(const shape_t<Rank>&, Indices...)
+template<shape Shape, index... Indices>
+constexpr bool in_range(const Shape& shape, Indices...)
 {
   return true; // to be implemented.
 }
@@ -109,8 +101,8 @@ constexpr bool in_range(const shape_t<Rank>&, Indices...)
 
 /// @brief Matrix element type, as is.
 template<matrix Matrix>
-using matrix_element_decltype_t =
-    decltype(std::declval<Matrix>()(size_t{}, size_t{}));
+using matrix_element_decltype_t = decltype(std::apply(
+    std::declval<Matrix>(), std::declval<Matrix>().shape()));
 
 /// @brief Matrix element type.
 template<matrix Matrix>
@@ -162,7 +154,7 @@ concept numeric_matrix =
 #include <Storm/Bittern/MatrixAlgorithms.hpp>
 #include <Storm/Bittern/MatrixTarget.hpp>
 
-// #include <Storm/Bittern/MatrixGenerator.hpp>
+#include <Storm/Bittern/MatrixGenerator.hpp>
 #include <Storm/Bittern/MatrixMath.hpp>
 #include <Storm/Bittern/MatrixProduct.hpp>
 #include <Storm/Bittern/MatrixTranspose.hpp>

@@ -42,8 +42,8 @@ namespace Storm
 template<std::copy_constructible Func, matrix_view... Matrices>
   requires std::is_object_v<Func> && (sizeof...(Matrices) >= 1) &&
            std::regular_invocable<Func, matrix_element_t<Matrices>...>
-class MapMatrixView final :
-    public MatrixViewInterface<MapMatrixView<Func, Matrices...>>
+class MatrixMapView final :
+    public MatrixViewInterface<MatrixMapView<Func, Matrices...>>
 {
 private:
 
@@ -55,7 +55,7 @@ private:
 public:
 
   /// @brief Construct a map view.
-  constexpr explicit MapMatrixView(Func func, Matrices... mats)
+  constexpr explicit MatrixMapView(Func func, Matrices... mats)
       : func_{std::move(func)}, mats_{std::move(mats)...}
   {
     std::apply(
@@ -74,7 +74,7 @@ public:
 
   /// @brief Get the matrix element at @p indices.
   template<class... Indices>
-    requires compatible_matrix_indices_v<MapMatrixView, Indices...>
+    requires compatible_matrix_indices_v<MatrixMapView, Indices...>
   constexpr auto operator()(Indices... indices) const noexcept
   {
     STORM_ASSERT_(in_range(shape(), indices...), "Indices are out of range!");
@@ -84,20 +84,19 @@ public:
     return std::apply(compute_element, mats_);
   }
 
-}; // class MapMatrixView
+}; // class MatrixMapView
 
 template<class Func, class... Matrices>
-MapMatrixView(Func, Matrices&&...)
-    -> MapMatrixView<Func, matrix_view_t<Matrices>...>;
+MatrixMapView(Func, Matrices&&...)
+    -> MatrixMapView<Func, matrix_view_t<Matrices>...>;
 
 /// @brief Element-wise apply function @p func to the matrices @p mats.
-template<class Func, viewable_matrix... Matrices>
+template<std::copy_constructible Func, viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...> &&
            std::regular_invocable<Func, matrix_element_t<Matrices>...>
-constexpr auto map(Func&& func, Matrices&&... mats)
+constexpr auto map(Func func, Matrices&&... mats)
 {
-  return MapMatrixView{std::forward<Func>(func),
-                       std::forward<Matrices>(mats)...};
+  return MatrixMapView{std::move(func), std::forward<Matrices>(mats)...};
 }
 
 // -----------------------------------------------------------------------------

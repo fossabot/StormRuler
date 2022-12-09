@@ -18,12 +18,13 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-// Automatically included with `Matrix.hpp`.
 #pragma once
 
 #include <Storm/Base.hpp>
 
 #include <Storm/Bittern/Matrix.hpp>
+#include <Storm/Bittern/MatrixView.hpp>
+#include <Storm/Bittern/Shape.hpp>
 
 #include <concepts>
 #include <type_traits>
@@ -32,22 +33,35 @@
 namespace Storm
 {
 
+// -----------------------------------------------------------------------------
+
+namespace detail_
+{
+
+  template<class Func, class Tuple>
+  concept regular_applicable_ =
+      requires { std::apply(std::declval<Func>(), std::declval<Tuple>()); };
+
+} // namespace detail_
+
 /// @brief Matrix making view.
-template<std::copy_constructible Func>
-  requires std::is_object_v<Func> &&
-           std::regular_invocable<Func, size_t, size_t>
-class MakeMatrixView final : public MatrixViewInterface<MakeMatrixView<Func>>
+template<shape Shape, std::copy_constructible Func>
+  requires std::is_object_v<Func> && detail_::regular_applicable_<Func, Shape>
+class MatrixGeneratorView final :
+    public MatrixViewInterface<MatrixGeneratorView<Shape, Func>>
 {
 private:
 
-  MatrixShape shape_;
+  static_assert(std::copyable<Func>, "Boxing is not implemented yet!");
+
+  STORM_NO_UNIQUE_ADDRESS_ Shape shape_;
   STORM_NO_UNIQUE_ADDRESS_ Func func_;
 
 public:
 
-  /// @brief Construct a making view.
-  constexpr MakeMatrixView(MatrixShape shape, Func func)
-      : shape_{shape}, func_{std::move(func)}
+  /// @brief Construct a generator view.
+  constexpr MatrixGeneratorView(Shape shape, Func func)
+      : shape_{std::move(shape)}, func_{std::move(func)}
   {
   }
 
@@ -58,17 +72,26 @@ public:
   }
 
   /// @brief Get the matrix element at @p indices.
-  constexpr auto operator()(size_t row_index, size_t col_index) const noexcept
+  template<class... Indices>
+    requires compatible_matrix_indices_v<MatrixGeneratorView, Indices...>
+  constexpr auto operator()(Indices... indices) const noexcept
   {
-    STORM_ASSERT_(shape_.in_range(row_index, col_index),
-                  "Indices are out of range.");
-    return func_(row_index, col_index);
+    STORM_ASSERT_(in_range(shape(), indices...), "Indices are out of range!");
+    return func_(indices...);
   }
 
-}; // class MakeMatrixView
+}; // class MatrixGeneratorView
+
+/// @brief Generate a matrix of shape @p shape with function @p func.
+template<shape Shape, std::copy_constructible Func>
+constexpr auto generate(Shape shape, Func func)
+{
+  return MatrixGeneratorView{std::move(shape), std::move(func)};
+}
 
 // -----------------------------------------------------------------------------
 
+#if 0
 /// @brief Make a constant matrix of @p shape.
 /// @param value Matrix element value.
 template<std::copyable Element>
@@ -104,5 +127,6 @@ constexpr auto& fill_diag_with(matrix auto&& mat, auto scal) noexcept
 {
   return mat <<= make_diagonal_matrix(mat.shape(), scal);
 }
+#endif
 
 } // namespace Storm

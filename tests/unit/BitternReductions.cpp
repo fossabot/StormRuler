@@ -33,8 +33,8 @@ TEST_CASE("Bittern/BoolMatrixReductions")
 {
   SUBCASE("true-mat")
   {
-    Mat2x2<bool> true_mat{true, true, //
-                          true, true};
+    const DenseMatrix true_mat{{true, true}, //
+                               {true, true}};
 
     CHECK(all(true_mat));
     CHECK(any(true_mat));
@@ -42,8 +42,8 @@ TEST_CASE("Bittern/BoolMatrixReductions")
 
   SUBCASE("false-mat")
   {
-    Mat2x2<bool> false_mat{false, false, //
-                           false, false};
+    const DenseMatrix false_mat{{false, false}, //
+                                {false, false}};
 
     CHECK_FALSE(all(false_mat));
     CHECK_FALSE(any(false_mat));
@@ -51,8 +51,8 @@ TEST_CASE("Bittern/BoolMatrixReductions")
 
   SUBCASE("mixed-mat")
   {
-    Mat2x2<bool> mixed_mat{true, false, //
-                           false, true};
+    const DenseMatrix mixed_mat{{true, false}, //
+                                {false, true}};
 
     CHECK_FALSE(all(mixed_mat));
     CHECK(any(mixed_mat));
@@ -63,8 +63,8 @@ TEST_CASE("Bittern/BoolMatrixReductions")
 
 TEST_CASE("Bittern/RealMatrixReductions")
 {
-  Mat2x2<real_t> mat{+1.0_dp, -2.0_dp, //
-                     +3.0_dp, -4.0_dp};
+  const DenseMatrix mat{{+1.0_dp, -2.0_dp}, //
+                        {+3.0_dp, -4.0_dp}};
 
   SUBCASE("simple-reductions")
   {
@@ -87,8 +87,8 @@ TEST_CASE("Bittern/RealMatrixReductions")
 
 TEST_CASE("Bittern/ComplexMatrixReductions")
 {
-  Mat2x2<complex_t> mat{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp, //
-                        +3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp};
+  const DenseMatrix mat{{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp},
+                        {+3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp}};
 
   SUBCASE("simple-reductions")
   {
@@ -109,12 +109,12 @@ TEST_CASE("Bittern/ComplexMatrixReductions")
 
 TEST_CASE("Bittern/DotProductReductions")
 {
-  Mat2x2<real_t> mat1{+1.0_dp, -2.0_dp, //
-                      +3.0_dp, -4.0_dp};
-  Mat2x2<real_t> mat2{+5.0_dp, -6.0_dp, //
-                      +7.0_dp, -8.0_dp};
-  Mat2x2<complex_t> mat3{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp, //
-                         +3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp};
+  const DenseMatrix mat1{{+1.0_dp, -2.0_dp}, //
+                         {+3.0_dp, -4.0_dp}};
+  const DenseMatrix mat2{{+5.0_dp, -6.0_dp}, //
+                         {+7.0_dp, -8.0_dp}};
+  const DenseMatrix mat3{{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp},
+                         {+3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp}};
 
   CHECK_EQ(dot_product(mat1, mat2), 70.0_dp);
 
@@ -131,10 +131,10 @@ TEST_CASE("Bittern/DotProductReductions")
 // Assuming the expressions are working.
 TEST_CASE("Bittern/MatrixExpressionReductions")
 {
-  Mat2x2<real_t> mat1{+1.0_dp, -2.0_dp, //
-                      +3.0_dp, -4.0_dp};
-  Mat2x2<complex_t> mat2{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp, //
-                         +3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp};
+  const DenseMatrix mat1{{+1.0_dp, -2.0_dp}, //
+                         {+3.0_dp, -4.0_dp}};
+  const DenseMatrix mat2{{+1.0_dp - i * 2.0_dp, -2.0_dp + i * 3.0_dp},
+                         {+3.0_dp - i * 4.0_dp, -4.0_dp + i * 5.0_dp}};
   const auto mat_expr = 2.0_dp * mat1 + i * 3.0_dp * mat2;
 
   const real_t eps = 1.0e-5_dp;
