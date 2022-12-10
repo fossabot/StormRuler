@@ -33,16 +33,35 @@ namespace Storm
 
 // -----------------------------------------------------------------------------
 
+/// @brief Dense matrix.
 template<class Elem, class Shape>
 class DenseMatrix;
 
-template<class Elem, size_t... Extents>
-using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
+template<matrix Matrix>
+DenseMatrix(Matrix&&)
+    -> DenseMatrix<matrix_element_t<Matrix>, matrix_shape_t<Matrix>>;
+
+/// @brief Construct a dense matrix from @p args.
+template<class... Args>
+  requires requires { DenseMatrix{std::declval<Args>()...}; }
+constexpr auto to_matrix(Args&&... args) noexcept
+{
+  return DenseMatrix{std::forward<Args>(args)...};
+}
+
+/// @brief Dense matrix type for arguments.
+template<class... Args>
+using matrix_t = decltype(DenseMatrix{std::declval<Args>()...});
 
 // -----------------------------------------------------------------------------
 
+/// @brief Dense matrix with fixed shape.
+template<class Elem, size_t... Extents>
+  requires std::is_object_v<Elem> && (... && (Extents > 0))
+using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
+
 /// @brief Fixed matrix (rank 1).
-template<class Elem, size_t Extent>
+template<std::copyable Elem, size_t Extent>
   requires std::is_object_v<Elem> && (Extent > 0)
 class DenseMatrix<Elem, fixed_shape_t<Extent>> final :
     public TargetMatrixInterface<DenseMatrix<Elem, fixed_shape_t<Extent>>>
@@ -56,18 +75,60 @@ public:
   /// @brief Construct a matrix.
   constexpr DenseMatrix() = default;
 
+  /// @brief Construct a matrix with elements of the matrix @p mat.
+  template<matrix Matrix>
+    requires compatible_matrices_v<DenseMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
+                                  matrix_element_t<Matrix>>
+  constexpr DenseMatrix(Matrix&& mat) noexcept
+  {
+    this->assign(std::forward<Matrix>(mat));
+  }
+
+  /// @brief Assign the current matrix elements from matrix @p mat.
+  template<matrix Matrix>
+    requires compatible_matrices_v<DenseMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
+                                  matrix_element_t<Matrix>>
+  constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
+  {
+    return this->assign(std::forward<Matrix>(mat));
+  }
+
   /// @brief Construct a matrix with elements @p elems.
   /// @{
-  template<class... Args>
-    requires (sizeof...(Args) == Extent)
-  constexpr explicit DenseMatrix(Args&&... elems)
-      : elems_{Elem{std::forward<Args>(elems)}...}
+  template<class... Elems>
+    requires (sizeof...(Elems) == Extent) &&
+             (... && std::constructible_from<Elem, Elems>)
+  constexpr explicit DenseMatrix(Elems&&... elems)
+      : elems_{Elem{std::forward<Elems>(elems)}...}
   {
   }
-  template<class Arg>
-  constexpr explicit DenseMatrix(Arg (&&elems)[Extent])
-      : elems_{std::to_array<Elem>(std::forward<Arg (&&)[Extent]>(elems))}
+  /// @}
+
+  /// @brief Construct a matrix with element array @p elems.
+  /// @{
+  constexpr explicit DenseMatrix(Elem (&&elems)[Extent])
+      : elems_{std::to_array(std::move(elems))}
   {
+  }
+  constexpr explicit DenseMatrix(const Elem (&elems)[Extent])
+      : elems_{std::to_array(elems)}
+  {
+  }
+  /// @}
+
+  /// @brief Assign the current matrix elements from array @p elems.
+  /// @{
+  constexpr DenseMatrix& operator=(Elem (&&elems)[Extent]) noexcept
+  {
+    elems_ = std::to_array(std::move(elems));
+    return *this;
+  }
+  constexpr DenseMatrix& operator=(const Elem (&elems)[Extent]) noexcept
+  {
+    elems_ = std::to_array(elems);
+    return *this;
   }
   /// @}
 
@@ -103,6 +164,7 @@ class DenseMatrix<Elem, fixed_shape_t<Extent, RestExtents...>> final :
 private:
 
   using Slice_ = FixedMatrix<Elem, RestExtents...>;
+  static constexpr size_t SecondExtent_ = detail_::first_(RestExtents...);
   STORM_NO_UNIQUE_ADDRESS_ std::array<Slice_, Extent> slices_{};
 
 public:
@@ -110,26 +172,71 @@ public:
   /// @brief Construct a matrix.
   constexpr DenseMatrix() = default;
 
-  /// @brief Construct a matrix with slices.
-  /// @{
+  /// @brief Construct a matrix with elements of the matrix @p mat.
+  template<matrix Matrix>
+    requires compatible_matrices_v<DenseMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
+                                  matrix_element_t<Matrix>>
+  constexpr DenseMatrix(Matrix&& mat) noexcept
+  {
+    this->assign(std::forward<Matrix>(mat));
+  }
+
+  /// @brief Assign the current matrix elements from matrix @p mat.
+  template<matrix Matrix>
+    requires compatible_matrices_v<DenseMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
+                                  matrix_element_t<Matrix>>
+  constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
+  {
+    return this->assign(std::forward<Matrix>(mat));
+  }
+
+  /// @brief Construct a matrix with slices @p slices.
   template<matrix... Slices>
-    requires (sizeof...(Slices) == Extent)
+    requires (sizeof...(Slices) == Extent) &&
+             (... && std::constructible_from<Slice_, Slices>)
   constexpr explicit DenseMatrix(Slices&&... slices)
       : slices_{Slice_{std::forward<Slices>(slices)}...}
   {
   }
-  template<class Arg>
-  constexpr explicit DenseMatrix(Arg (&&slices)[Extent])
-      : slices_{std::to_array<Slice_>(std::forward<Arg (&&)[Extent]>(slices))}
+
+  /// @brief Construct a matrix with slice array @p slices.
+  /// @{
+  constexpr explicit DenseMatrix(Slice_ (&&slices)[Extent])
+      : slices_{std::to_array(std::move(slices))}
   {
   }
-  template<class... Args, size_t SecondExtent>
-    requires (SecondExtent == detail_::first_(RestExtents...))
-  constexpr explicit DenseMatrix(Args (&&... slices)[SecondExtent])
-      : slices_{Slice_{std::forward<Args (&&)[SecondExtent]>(slices)}...}
+  constexpr explicit DenseMatrix(const Slice_ (&slices)[Extent])
+      : slices_{std::to_array(slices)}
   {
   }
   /// @}
+
+  /// @brief Assign the current matrix elements from array @p slices.
+  /// @{
+  constexpr DenseMatrix& operator=(Slice_ (&&slices)[Extent]) noexcept
+  {
+    slices_ = std::to_array(std::move(slices));
+    return *this;
+  }
+  constexpr DenseMatrix& operator=(const Slice_ (&slices)[Extent]) noexcept
+  {
+    slices_ = std::to_array(slices);
+    return *this;
+  }
+  /// @}
+
+  template<class... Subslices>
+    requires (sizeof...(Subslices) == Extent) &&
+             (... &&
+              std::constructible_from<Slice_,
+                                      matrix_t<Subslices[SecondExtent_]>>)
+  constexpr explicit DenseMatrix(
+      const Subslices (&... subslices)[SecondExtent_])
+      : slices_{to_matrix(subslices)...}
+  {
+  }
 
   /// @brief Get the matrix shape.
   constexpr auto shape() const noexcept
@@ -163,33 +270,31 @@ public:
 
 template<scalar... Elems>
   requires (sizeof...(Elems) > 1)
-DenseMatrix(Elems...)
-    -> DenseMatrix<std::common_type_t<std::remove_cvref_t<Elems>...>,
-                   fixed_shape_t<sizeof...(Elems)>>;
+DenseMatrix(Elems...) -> DenseMatrix<std::common_type_t<Elems...>,
+                                     fixed_shape_t<sizeof...(Elems)>>;
 template<matrix... Slices>
-  requires ((sizeof...(Slices) > 1) && compatible_matrices_v<Slices...>)
+  requires (sizeof...(Slices) > 1)
 DenseMatrix(Slices&&...)
     -> DenseMatrix<std::common_type_t<matrix_element_t<Slices>...>,
                    cat_shapes_t<fixed_shape_t<sizeof...(Slices)>,
                                 common_shape_t<matrix_shape_t<Slices>...>>>;
 
-template<class Elem, size_t Extent>
-  requires (!matrix<Elem>)
+template<scalar Elem, size_t Extent>
 DenseMatrix(const Elem (&)[Extent])
     -> DenseMatrix<std::remove_cvref_t<Elem>, fixed_shape_t<Extent>>;
 template<matrix Slice, size_t Extent>
-DenseMatrix(Slice (&&)[Extent])
+DenseMatrix(const Slice (&)[Extent])
     -> DenseMatrix<matrix_element_t<Slice>,
                    cat_shapes_t<fixed_shape_t<Extent>, matrix_shape_t<Slice>>>;
 
 template<scalar... Elems, size_t SecondExtent>
   requires (sizeof...(Elems) > 1)
 DenseMatrix(const Elems (&... _)[SecondExtent]...)
-    -> DenseMatrix<std::common_type_t<std::remove_cvref_t<Elems>...>, //
+    -> DenseMatrix<std::common_type_t<Elems...>, //
                    fixed_shape_t<sizeof...(Elems), SecondExtent>>;
 template<matrix... Slices, size_t SecondExtent>
-  requires ((sizeof...(Slices) > 1) && compatible_matrices_v<Slices...>)
-DenseMatrix(Slices (&&... _)[SecondExtent])
+  requires (sizeof...(Slices) > 1)
+DenseMatrix(const Slices (&... _)[SecondExtent])
     -> DenseMatrix<std::common_type_t<matrix_element_t<Slices>...>,
                    cat_shapes_t<fixed_shape_t<sizeof...(Slices), SecondExtent>,
                                 common_shape_t<matrix_shape_t<Slices>...>>>;
@@ -227,7 +332,7 @@ public:
   template<matrix Matrix>
   constexpr StaticMatrix(Matrix&& other) noexcept
   {
-    assign(*this, std::forward<Matrix>(other));
+    assign_elements(*this, std::forward<Matrix>(other));
   }
 
   using TargetMatrixInterface<StaticMatrix<Elem, NumRows, NumCols>>::operator=;

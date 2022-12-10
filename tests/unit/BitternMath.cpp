@@ -372,17 +372,15 @@ TEST_CASE("Bittern/HyperbolicMatrixExpressions")
     CHECK(all(approx_equal(asinh(sinh_mat), mat)));
   }
 
-#if 0
   SUBCASE("cosh/acosh")
   {
-    const auto cosh_mat =
-        cast_matrix<complex_t>(DenseMatrix{{sqrt3 / 2.0_dp, 1.0_dp / sqrt2},
-                                           {1.0_dp / sqrt2, sqrt3 / 2.0_dp}});
+    const FixedMatrix<complex_t, 2, 2> cosh_mat{
+        {sqrt3 / 2.0_dp, 1.0_dp / sqrt2},
+        {1.0_dp / sqrt2, sqrt3 / 2.0_dp}};
 
     CHECK(all(approx_equal(cosh(mat), cosh_mat)));
     CHECK(all(approx_equal(acosh(cosh_mat), (1.0_dp * i) * abs(mat))));
   }
-#endif
 
   SUBCASE("tanh/atanh")
   {
