@@ -68,17 +68,13 @@ public:
   /// @brief Assign the current matrix elements from matrix @p mat.
   /// @{
   template<matrix Matrix>
-    requires compatible_matrices_v<TargetMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<TargetMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<TargetMatrix, Matrix>
   constexpr decltype(auto) assign(Matrix&& mat) noexcept
   {
     return assign_elements(self_(), std::forward<Matrix>(mat));
   }
   template<matrix Matrix>
-    requires compatible_matrices_v<TargetMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<TargetMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<TargetMatrix, Matrix>
   constexpr decltype(auto) operator=(Matrix&& mat) noexcept
   {
     return assign(std::forward<Matrix>(mat));

@@ -43,8 +43,8 @@ DenseMatrix(Matrix&&)
 
 /// @brief Construct a dense matrix from @p args.
 template<class... Args>
-  requires requires { DenseMatrix{std::declval<Args>()...}; }
 constexpr auto to_matrix(Args&&... args) noexcept
+  requires requires { DenseMatrix{std::forward<Args>(args)...}; }
 {
   return DenseMatrix{std::forward<Args>(args)...};
 }
@@ -77,9 +77,7 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires compatible_matrices_v<DenseMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<DenseMatrix, Matrix>
   constexpr DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -87,9 +85,7 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires compatible_matrices_v<DenseMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<DenseMatrix, Matrix>
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -188,9 +184,7 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires compatible_matrices_v<DenseMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<DenseMatrix, Matrix>
   constexpr DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -198,9 +192,7 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires compatible_matrices_v<DenseMatrix, Matrix> &&
-             std::assignable_from<matrix_element_ref_t<DenseMatrix>,
-                                  matrix_element_t<Matrix>>
+    requires matrix_assignable_from<DenseMatrix, Matrix>
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -244,10 +236,10 @@ public:
   /// @}
 
   template<class... Subslices>
-    requires (sizeof...(Subslices) == Extent) &&
-             (... &&
-              std::constructible_from<Slice_,
-                                      matrix_t<Subslices[SecondExtent_]>>)
+    requires (Extent == sizeof...(Subslices)) &&
+             (std::constructible_from<Slice_,
+                                      matrix_t<Subslices[SecondExtent_]>> &&
+              ...)
   constexpr explicit DenseMatrix(
       const Subslices (&... subslices)[SecondExtent_])
       : slices_{to_matrix(subslices)...}

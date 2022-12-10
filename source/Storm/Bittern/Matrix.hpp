@@ -101,22 +101,32 @@ constexpr bool in_range(const Shape& shape, Indices...)
 
 /// @brief Matrix element type, as is.
 template<matrix Matrix>
-using matrix_element_decltype_t = decltype(std::apply(
-    std::declval<Matrix>(), std::declval<Matrix>().shape()));
+using matrix_element_decltype_t = decltype( //
+    std::apply(std::declval<Matrix>(), std::declval<Matrix>().shape()));
 
 /// @brief Matrix element type.
 template<matrix Matrix>
 using matrix_element_t = std::remove_cvref_t<matrix_element_decltype_t<Matrix>>;
 
+/// @brief Matrix element reference type.
+template<matrix Matrix>
+  requires std::is_reference_v<matrix_element_decltype_t<Matrix>>
+using matrix_element_ref_t = matrix_element_decltype_t<Matrix>;
+
 /// @brief Matrix with assignable elements.
 template<class Matrix>
 concept output_matrix =
-    matrix<Matrix> && /// @todo Check if reference is not const!
-    std::is_lvalue_reference_v<matrix_element_decltype_t<Matrix>>;
+    matrix<Matrix> &&
+    std::same_as<matrix_element_ref_t<Matrix>,
+                 std::add_lvalue_reference_t<matrix_element_t<Matrix>>>;
 
-/// @brief Matrix element reference type.
-template<output_matrix Matrix>
-using matrix_element_ref_t = matrix_element_decltype_t<Matrix>;
+/// @brief Matrix elements are assignable from the elements of another matrix.
+template<class OutMatrix, class Matrix>
+concept matrix_assignable_from =
+    output_matrix<OutMatrix> && matrix<Matrix> &&
+    compatible_matrices_v<OutMatrix, Matrix> &&
+    std::assignable_from<matrix_element_ref_t<OutMatrix>,
+                         matrix_element_t<Matrix>>;
 
 /// @brief Matrix with boolean elements.
 template<class Matrix>
