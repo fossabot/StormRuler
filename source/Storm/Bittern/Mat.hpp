@@ -56,7 +56,7 @@ using matrix_t = decltype(DenseMatrix{std::declval<Args>()...});
 // -----------------------------------------------------------------------------
 
 /// @brief Dense matrix with fixed shape.
-template<class Elem, size_t... Extents>
+template<std::copyable Elem, size_t... Extents>
   requires std::is_object_v<Elem> && (... && (Extents > 0))
 using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
 
@@ -98,8 +98,10 @@ public:
   /// @brief Construct a matrix with elements @p elems.
   /// @{
   template<class... Elems>
-    requires (sizeof...(Elems) == Extent) &&
-             (... && std::constructible_from<Elem, Elems>)
+    requires (Extent == sizeof...(Elems)) &&
+             ((std::constructible_from<Elem, Elems> &&
+               !std::derived_from<std::remove_cvref_t<Elems>, DenseMatrix>) &&
+              ...)
   constexpr explicit DenseMatrix(Elems&&... elems)
       : elems_{Elem{std::forward<Elems>(elems)}...}
   {
@@ -167,7 +169,7 @@ public:
 }; // class DenseMatrix
 
 /// @brief Fixed matrix (multirank).
-template<class Elem, size_t Extent, size_t... RestExtents>
+template<std::copyable Elem, size_t Extent, size_t... RestExtents>
   requires std::is_object_v<Elem> && (Extent > 0) && (... && (RestExtents > 0))
 class DenseMatrix<Elem, fixed_shape_t<Extent, RestExtents...>> final :
     public TargetMatrixInterface<
@@ -206,8 +208,10 @@ public:
 
   /// @brief Construct a matrix with slices @p slices.
   template<matrix... Slices>
-    requires (sizeof...(Slices) == Extent) &&
-             (... && std::constructible_from<Slice_, Slices>)
+    requires (Extent == sizeof...(Slices)) &&
+             ((std::constructible_from<Slice_, Slices> &&
+               !std::derived_from<std::remove_cvref_t<Slices>, DenseMatrix>) &&
+              ...)
   constexpr explicit DenseMatrix(Slices&&... slices)
       : slices_{Slice_{std::forward<Slices>(slices)}...}
   {
