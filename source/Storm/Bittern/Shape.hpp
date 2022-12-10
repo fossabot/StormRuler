@@ -90,11 +90,14 @@ consteval auto shp() noexcept
 // -----------------------------------------------------------------------------
 
 /// @brief Shape: instantiation of shape_t.
+#if 0
 template<class Shape>
 concept shape =
-    requires {
-      std::apply([](extent auto...) { /*empty*/ }, std::declval<Shape>());
-    };
+    requires { std::apply([](auto...) { /*empty*/ }, std::declval<Shape>()); };
+#else
+template<class Shape>
+concept shape = true;
+#endif
 
 /// @brief Shape rank.
 template<shape Shape>

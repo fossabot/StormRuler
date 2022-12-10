@@ -152,6 +152,18 @@ public:
   }
   /// @}
 
+  /// @todo Transition code! Remove me!
+  /// @{
+  constexpr Elem& operator[](size_t row_index) noexcept
+  {
+    return (*this)(row_index);
+  }
+  constexpr const Elem& operator[](size_t row_index) const noexcept
+  {
+    return (*this)(row_index);
+  }
+  /// @}
+
 }; // class DenseMatrix
 
 /// @brief Fixed matrix (multirank).
@@ -302,6 +314,7 @@ DenseMatrix(const Slices (&... _)[SecondExtent])
 // -----------------------------------------------------------------------------
 
 /// @brief Statically-sized matrix.
+/// @todo This is a legacy matrix. Do not use it!
 template<class Elem, size_t NumRows, size_t NumCols>
 class StaticMatrix final :
     public TargetMatrixInterface<StaticMatrix<Elem, NumRows, NumCols>>
