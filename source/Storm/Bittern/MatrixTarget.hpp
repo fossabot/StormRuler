@@ -39,7 +39,7 @@ template<crtp_derived TargetMatrix>
 class TargetMatrixInterface;
 
 /// @brief Target matrix: an output matrix that is an assignment target.
-/// Additional requirement: target matrix overrides (or uses) the operator=
+/// Additional requirement: target matrix overrides (or uses) the @c operator=
 /// from the TargetMatrixInterface.
 template<class TargetMatrix>
 concept target_matrix =
@@ -48,7 +48,7 @@ concept target_matrix =
 
 /// @brief CRTP interface to a target matrix.
 template<crtp_derived TargetMatrix>
-class TargetMatrixInterface : public NonAssignable
+class TargetMatrixInterface : public NonAssignableInterface
 {
 private:
 
@@ -65,21 +65,32 @@ private:
 
 public:
 
-  /// @brief Assign the current matrix coefficients from matrix @p mat.
+  /// @brief Assign the current matrix elements from matrix @p mat.
+  /// @{
   template<matrix Matrix>
-    requires std::assignable_from< //
-        matrix_element_ref_t<TargetMatrix>, matrix_element_t<Matrix>>
+    requires compatible_matrices_v<TargetMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<TargetMatrix>,
+                                  matrix_element_t<Matrix>>
+  constexpr decltype(auto) assign(Matrix&& mat) noexcept
+  {
+    return assign_elements(self_(), std::forward<Matrix>(mat));
+  }
+  template<matrix Matrix>
+    requires compatible_matrices_v<TargetMatrix, Matrix> &&
+             std::assignable_from<matrix_element_ref_t<TargetMatrix>,
+                                  matrix_element_t<Matrix>>
   constexpr decltype(auto) operator=(Matrix&& mat) noexcept
   {
-    return assign(self_(), std::forward<Matrix>(mat));
+    return assign(std::forward<Matrix>(mat));
   }
+  /// @}
 
   /// @brief Multiply-assign the current matrix by a scalar @p scal.
   template<std::copyable Scalar>
     requires numeric_matrix<TargetMatrix> && numeric_type<Scalar>
   constexpr decltype(auto) operator*=(Scalar scal)
   {
-    return assign(BindLast{MultiplyAssign{}, std::move(scal)}, *this);
+    return eval_elements(BindLast{MultiplyAssign{}, std::move(scal)}, *this);
   }
 
   /// @brief Divide-assign the current matrix by a scalar @p scal.
@@ -87,7 +98,7 @@ public:
     requires numeric_matrix<TargetMatrix> && numeric_type<Scalar>
   constexpr decltype(auto) operator/=(Scalar scal)
   {
-    return assign(BindLast{DivideAssign{}, std::move(scal)}, *this);
+    return eval_elements(BindLast{DivideAssign{}, std::move(scal)}, *this);
   }
 
   /// @brief Add-assign the matrix @p mat to the current matrix.
@@ -96,7 +107,7 @@ public:
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
   constexpr decltype(auto) operator+=(Matrix&& mat)
   {
-    return assign(AddAssign{}, self_(), std::forward<Matrix>(mat));
+    return eval_elements(AddAssign{}, self_(), std::forward<Matrix>(mat));
   }
 
   /// @brief Subtract-assign the matrix @p mat from the current matrix.
@@ -105,7 +116,7 @@ public:
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
   constexpr decltype(auto) operator-=(Matrix&& mat)
   {
-    return assign(SubtractAssign{}, self_(), std::forward<Matrix>(mat));
+    return eval_elements(SubtractAssign{}, self_(), std::forward<Matrix>(mat));
   }
 
   /// @brief Element-wise multiply-assign the current matrix by
@@ -115,7 +126,7 @@ public:
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
   constexpr decltype(auto) operator*=(Matrix&& mat)
   {
-    return assign(MultiplyAssign{}, self_(), std::forward<Matrix>(mat));
+    return eval_elements(MultiplyAssign{}, self_(), std::forward<Matrix>(mat));
   }
 
   /// @brief Element-wise divide-assign the current matrix by the matrix @p mat.
@@ -124,7 +135,7 @@ public:
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
   constexpr decltype(auto) operator/=(Matrix&& mat)
   {
-    return assign(DivideAssign{}, self_(), std::forward<Matrix>(mat));
+    return eval_elements(DivideAssign{}, self_(), std::forward<Matrix>(mat));
   }
 
 }; // class TargetMatrixInterface
@@ -137,7 +148,7 @@ template<matrix_view Matrix>
 class TargetMatrixView final :
     public MatrixViewInterface<TargetMatrixView<Matrix>>,
     public TargetMatrixInterface<TargetMatrixView<Matrix>>,
-    public NonMovable
+    public NonMovableInterface
 {
 private:
 

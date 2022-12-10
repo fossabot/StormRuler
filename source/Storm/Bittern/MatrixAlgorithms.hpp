@@ -58,7 +58,18 @@ std::ostream& operator<<(std::ostream& out, const matrix auto& mat)
 /// @brief Assign the matrices.
 /// @{
 template<output_matrix OutMatrix, matrix Matrix>
-constexpr OutMatrix& assign(OutMatrix&& out_mat, Matrix&& mat) noexcept
+  requires matrix_r<OutMatrix, 1>
+constexpr OutMatrix& assign_elements(OutMatrix&& out_mat, Matrix&& mat) noexcept
+{
+  STORM_ASSERT_(out_mat.shape() == mat.shape(), "Matrix shapes do not match!");
+  for (size_t row_index = 0; row_index < num_rows(out_mat); ++row_index) {
+    out_mat(row_index) = mat(row_index);
+  }
+  return out_mat;
+}
+template<output_matrix OutMatrix, matrix Matrix>
+  requires matrix_r<OutMatrix, 2>
+constexpr OutMatrix& assign_elements(OutMatrix&& out_mat, Matrix&& mat) noexcept
 {
   STORM_ASSERT_(out_mat.shape() == mat.shape(), "Matrix shapes do not match!");
   for (size_t row_index = 0; row_index < num_rows(out_mat); ++row_index) {
@@ -68,9 +79,23 @@ constexpr OutMatrix& assign(OutMatrix&& out_mat, Matrix&& mat) noexcept
   }
   return out_mat;
 }
+
 template<output_matrix OutMatrix, class AssignFunc, matrix... Matrices>
-constexpr OutMatrix& assign(AssignFunc assign_func, //
-                            OutMatrix&& out_mat, Matrices&&... mats) noexcept
+  requires matrix_r<OutMatrix, 1>
+constexpr OutMatrix& eval_elements(AssignFunc assign_func, OutMatrix&& out_mat,
+                                   Matrices&&... mats) noexcept
+{
+  STORM_ASSERT_((out_mat.shape() == mats.shape()) && ...,
+                "Matrix shapes do not match!");
+  for (size_t row_index = 0; row_index < num_rows(out_mat); ++row_index) {
+    assign_func(out_mat(row_index), mats(row_index)...);
+  }
+  return out_mat;
+}
+template<output_matrix OutMatrix, class AssignFunc, matrix... Matrices>
+  requires matrix_r<OutMatrix, 2>
+constexpr OutMatrix& eval_elements(AssignFunc assign_func, OutMatrix&& out_mat,
+                                   Matrices&&... mats) noexcept
 {
   STORM_ASSERT_((out_mat.shape() == mats.shape()) && ...,
                 "Matrix shapes do not match!");
@@ -88,7 +113,8 @@ constexpr OutMatrix& assign(AssignFunc assign_func, //
 template<output_matrix OutMatrix, matrix Matrix>
 constexpr OutMatrix& operator<<=(OutMatrix&& out_mat, Matrix&& mat) noexcept
 {
-  return assign(std::forward<OutMatrix>(out_mat), std::forward<Matrix>(mat));
+  return assign_elements(std::forward<OutMatrix>(out_mat),
+                         std::forward<Matrix>(mat));
 }
 
 // -----------------------------------------------------------------------------
@@ -98,7 +124,7 @@ template<matrix OutMatrix, std::copyable Scalar>
   requires (!matrix<Scalar>)
 constexpr OutMatrix& fill(OutMatrix& out_mat, Scalar scal)
 {
-  return assign(
+  return eval_elements(
       [scal = std::move(scal)](auto& out_elem) noexcept { out_elem = scal; },
       out_mat);
 }

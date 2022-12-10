@@ -337,7 +337,7 @@ template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
 constexpr auto normalize(Matrix&& mat)
 {
-  auto mat_view = make_matrix_view(std::forward<Matrix>(mat));
+  auto mat_view = to_matrix_view(std::forward<Matrix>(mat));
   const auto mat_norm = norm_2(mat_view);
   return safe_divide(1.0_dp, mat_norm) * std::move(mat_view);
 }

@@ -259,86 +259,86 @@ constexpr real_t operator""_dp(long double arg) noexcept
 // -----------------------------------------------------------------------------
 
 /// @brief Non movable (and non copyable) object interface.
-class NonMovable
+class NonMovableInterface
 {
 protected:
 
   /// @brief Non movable object is default initializible.
-  NonMovable() = default;
+  NonMovableInterface() = default;
 
   /// @brief Non copyable object is NOT move constructible.
-  NonMovable(NonMovable&&) = default;
+  NonMovableInterface(NonMovableInterface&&) = default;
 
   /// @brief Non copyable object is NOT copy constructible.
-  NonMovable(const NonMovable&) = delete;
+  NonMovableInterface(const NonMovableInterface&) = delete;
 
   /// @brief Non copyable object is NOT move assignable.
-  NonMovable& operator=(NonMovable&&) = delete;
+  NonMovableInterface& operator=(NonMovableInterface&&) = delete;
 
   /// @brief Non copyable object is NOT copy assignable.
-  NonMovable& operator=(const NonMovable&) = delete;
+  NonMovableInterface& operator=(const NonMovableInterface&) = delete;
 
   /// @brief Non movable object is destructible.
-  ~NonMovable() = default;
+  ~NonMovableInterface() = default;
 
-}; // class NonMovable
+}; // class NonMovableInterface
 
 /// @brief Non copyable object interface.
-class NonCopyable
+class NonCopyableInterface
 {
 protected:
 
   /// @brief Non copyable object is default initializible.
-  NonCopyable() = default;
+  NonCopyableInterface() = default;
 
   /// @brief Non copyable object is move constructible.
-  NonCopyable(NonCopyable&&) = default;
+  NonCopyableInterface(NonCopyableInterface&&) = default;
 
   /// @brief Non copyable object is NOT copy constructible.
-  NonCopyable(const NonCopyable&) = delete;
+  NonCopyableInterface(const NonCopyableInterface&) = delete;
 
   /// @brief Non copyable object is move assignable.
-  NonCopyable& operator=(NonCopyable&&) = default;
+  NonCopyableInterface& operator=(NonCopyableInterface&&) = default;
 
   /// @brief Non copyable object is NOT copy assignable.
-  NonCopyable& operator=(const NonCopyable&) = delete;
+  NonCopyableInterface& operator=(const NonCopyableInterface&) = delete;
 
   /// @brief Non copyable object is destructible.
-  ~NonCopyable() = default;
+  ~NonCopyableInterface() = default;
 
-}; // class NonCopyable
+}; // class NonCopyableInterface
 
 /// @brief Non assignable object interface.
-class NonAssignable
+class NonAssignableInterface
 {
 protected:
 
   /// @brief Non assignable object is default initializible.
-  NonAssignable() = default;
+  NonAssignableInterface() = default;
 
   /// @brief Non assignable object is move constructible.
-  NonAssignable(NonAssignable&&) = default;
+  NonAssignableInterface(NonAssignableInterface&&) = default;
 
   /// @brief Non assignable object is copy constructible.
-  NonAssignable(const NonAssignable&) = default;
+  NonAssignableInterface(const NonAssignableInterface&) = default;
 
   /// @brief Non assignable object is NOT move assignable.
-  NonAssignable& operator=(NonAssignable&&) = delete;
+  NonAssignableInterface& operator=(NonAssignableInterface&&) = delete;
 
   /// @brief Non assignable object is NOT copy assignable.
-  NonAssignable& operator=(const NonAssignable&) = delete;
+  NonAssignableInterface& operator=(const NonAssignableInterface&) = delete;
 
   /// @brief Non assignable object is destructible.
-  ~NonAssignable() = default;
+  ~NonAssignableInterface() = default;
 
-}; // class NonAssignable
+}; // class NonAssignableInterface
 
 // -----------------------------------------------------------------------------
 
 namespace detail_
 {
 
-  using noncopyable_ = NonCopyable;
+  using noncopyable_ = NonCopyableInterface;
 
   constexpr bool in_range_(auto t, auto min, auto max)
   {

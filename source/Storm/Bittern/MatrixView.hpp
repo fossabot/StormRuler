@@ -139,7 +139,7 @@ template<matrix Matrix>
   requires std::move_constructible<Matrix>
 class MatrixOwningView final :
     public MatrixViewInterface<MatrixOwningView<Matrix>>,
-    public NonCopyable
+    public NonCopyableInterface
 {
 private:
 
@@ -193,7 +193,7 @@ template<viewable_matrix Matrix>
   requires matrix_view<std::decay_t<Matrix>> ||
            detail_::can_matrix_ref_view_<Matrix> ||
            detail_::can_matrix_owning_view_<Matrix>
-constexpr auto make_matrix_view(Matrix&& mat) noexcept
+constexpr auto to_matrix_view(Matrix&& mat) noexcept
 {
   if constexpr (matrix_view<std::decay_t<Matrix>>) {
     return std::forward<Matrix>(mat);
@@ -206,7 +206,7 @@ constexpr auto make_matrix_view(Matrix&& mat) noexcept
 
 /// @brief Suitable matrix view type for a viewable matrix.
 template<viewable_matrix Matrix>
-using matrix_view_t = decltype(make_matrix_view(std::declval<Matrix>()));
+using matrix_view_t = decltype(to_matrix_view(std::declval<Matrix>()));
 
 // -----------------------------------------------------------------------------
 
