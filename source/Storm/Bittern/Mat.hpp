@@ -44,14 +44,13 @@ DenseMatrix(Matrix&&)
 /// @brief Construct a dense matrix from @p args.
 template<class... Args>
 constexpr auto to_matrix(Args&&... args) noexcept
-  requires requires { DenseMatrix{std::forward<Args>(args)...}; }
 {
   return DenseMatrix{std::forward<Args>(args)...};
 }
 
 /// @brief Dense matrix type for arguments.
 template<class... Args>
-using matrix_t = decltype(DenseMatrix{std::declval<Args>()...});
+using matrix_t = decltype(to_matrix(std::declval<Args>()...));
 
 // -----------------------------------------------------------------------------
 
@@ -78,7 +77,7 @@ public:
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
     requires matrix_assignable_from<DenseMatrix, Matrix>
-  constexpr DenseMatrix(Matrix&& mat) noexcept
+  constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
   }
@@ -106,6 +105,14 @@ public:
 
   /// @brief Construct a matrix with element array @p elems.
   /// @{
+  constexpr explicit DenseMatrix(std::array<Elem, Extent>&& elems)
+      : elems_{std::move(elems)}
+  {
+  }
+  constexpr explicit DenseMatrix(const std::array<Elem, Extent>& elems)
+      : elems_{elems}
+  {
+  }
   constexpr explicit DenseMatrix(Elem (&&elems)[Extent])
       : elems_{std::to_array(std::move(elems))}
   {
@@ -185,7 +192,7 @@ public:
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
     requires matrix_assignable_from<DenseMatrix, Matrix>
-  constexpr DenseMatrix(Matrix&& mat) noexcept
+  constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
   }
@@ -211,6 +218,14 @@ public:
 
   /// @brief Construct a matrix with slice array @p slices.
   /// @{
+  constexpr explicit DenseMatrix(std::array<Slice_, Extent>&& slices)
+      : slices_{std::move(slices)}
+  {
+  }
+  constexpr explicit DenseMatrix(const std::array<Slice_, Extent>& slices)
+      : slices_{slices}
+  {
+  }
   constexpr explicit DenseMatrix(Slice_ (&&slices)[Extent])
       : slices_{std::to_array(std::move(slices))}
   {
@@ -242,7 +257,7 @@ public:
               ...)
   constexpr explicit DenseMatrix(
       const Subslices (&... subslices)[SecondExtent_])
-      : slices_{to_matrix(subslices)...}
+      : slices_{Slice_{to_matrix(subslices)}...}
   {
   }
 
