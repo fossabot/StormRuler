@@ -243,8 +243,7 @@ constexpr auto any(Matrix&& mat)
 // -----------------------------------------------------------------------------
 
 /// @brief Minimum matrix @p mat element.
-template<matrix Matrix>
-  requires std::totally_ordered<matrix_element_t<Matrix>>
+template<ordered_matrix Matrix>
 constexpr auto min_element(Matrix&& mat)
 {
   using Elem = matrix_element_t<Matrix>;
@@ -253,8 +252,7 @@ constexpr auto min_element(Matrix&& mat)
 }
 
 /// @brief Maximum matrix @p mat element.
-template<matrix Matrix>
-  requires std::totally_ordered<matrix_element_t<Matrix>>
+template<ordered_matrix Matrix>
 constexpr auto max_element(Matrix&& mat)
 {
   using Elem = matrix_element_t<Matrix>;

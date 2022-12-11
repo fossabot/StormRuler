@@ -87,6 +87,10 @@ concept real_or_complex_type = real_type<Type> || complex_type<Type>;
 template<class Type>
 concept numeric_type = integer_type<Type> || real_or_complex_type<Type>;
 
+/// @brief Ordered numeric type (integer or real).
+template<class Type>
+concept ordered_type = integer_type<Type> || real_type<Type>;
+
 // -----------------------------------------------------------------------------
 
 /// @brief If @p y is zero, return zero,
@@ -142,8 +146,8 @@ constexpr auto conj(const std::complex<Type>& arg) noexcept
 
 // -----------------------------------------------------------------------------
 
-template<class Arg>
-  requires real_type<Arg> || integer_type<Arg>
+/// @brief Sign of the argument @p arg.
+template<ordered_type Arg>
 constexpr int sign(const Arg& arg) noexcept
 {
   return (Arg{0} < arg) - (arg < Arg{0});
@@ -151,9 +155,21 @@ constexpr int sign(const Arg& arg) noexcept
 
 using std::abs;
 
-using std::min;
+/// @brief Minimum the arguments @p args.
+template<ordered_type... Args>
+constexpr auto min(Args&&... args) noexcept
+{
+  using Result = std::common_type_t<std::remove_cvref_t<Args>...>;
+  return std::min({static_cast<Result>(std::forward<Args>(args))...});
+}
 
-using std::max;
+/// @brief Maximum the arguments @p args.
+template<ordered_type... Args>
+constexpr auto max(Args&&... args) noexcept
+{
+  using Result = std::common_type_t<std::remove_cvref_t<Args>...>;
+  return std::max({static_cast<Result>(std::forward<Args>(args))...});
+}
 
 // -----------------------------------------------------------------------------
 

@@ -152,6 +152,11 @@ template<class Matrix>
 concept numeric_matrix =
     integer_matrix<Matrix> || real_or_complex_matrix<Matrix>;
 
+/// @brief Matrix with ordered numerical elements.
+template<class Matrix>
+concept ordered_matrix =
+    matrix<Matrix> && ordered_type<matrix_element_t<Matrix>>;
+
 // -----------------------------------------------------------------------------
 
 } // namespace Storm

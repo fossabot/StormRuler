@@ -66,7 +66,29 @@ TEST_CASE("Bittern/CompareMatrixExpressions")
   }
 }
 
-/// @todo Min/Max!
+TEST_CASE("Bittern/MinMaxMatrixExpressions")
+{
+  const DenseMatrix mat1{{+1.0_dp, -2.0_dp}, //
+                         {+3.0_dp, -7.0_dp}};
+  const DenseMatrix mat2{{+1.0_dp, -3.0_dp}, //
+                         {+6.0_dp, -5.0_dp}};
+
+  SUBCASE("min")
+  {
+    const DenseMatrix min_mat{{+1.0_dp, -3.0_dp}, //
+                              {+3.0_dp, -7.0_dp}};
+
+    CHECK(all(Storm::min(mat1, mat2) == min_mat));
+  }
+
+  SUBCASE("max")
+  {
+    const DenseMatrix max_mat{{+1.0_dp, -2.0_dp}, //
+                              {+6.0_dp, -5.0_dp}};
+
+    CHECK(all(Storm::max(mat1, mat2) == max_mat));
+  }
+}
 
 // -----------------------------------------------------------------------------
 

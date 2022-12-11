@@ -220,7 +220,7 @@ class And final
 {
 public:
 
-  template<class... Args>
+  template<bool_type... Args>
   constexpr bool operator()(Args&&... args) const noexcept
   {
     return (std::forward<Args>(args) && ...);
@@ -233,7 +233,7 @@ class Or final
 {
 public:
 
-  template<class... Args>
+  template<bool_type... Args>
   constexpr bool operator()(Args&&... args) const noexcept
   {
     return (std::forward<Args>(args) || ...);
@@ -246,8 +246,8 @@ class Merge final
 {
 public:
 
-  template<class Cond, class Then, class Else>
-    requires std::convertible_to<Cond, bool> && std::common_with<Then, Else>
+  template<bool_type Cond, class Then, class Else>
+    requires std::common_with<Then, Else>
   constexpr auto operator()(Cond&& cond, //
                             Then&& then_arg, Else&& else_arg) const noexcept
   {
@@ -284,12 +284,12 @@ public:
     STORM_ASSERT_(tolerance > 0.0l, "Negative tolerance!");
   }
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr bool operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
-    decltype(auto) delta =
-        abs(std::forward<Arg1>(arg1) - std::forward<Arg2>(arg2));
-    return static_cast<long double>(delta) <= tolerance_;
+    const auto delta = static_cast<long double>(
+        abs(std::forward<Arg1>(arg1) - std::forward<Arg2>(arg2)));
+    return delta <= tolerance_;
   }
 
 }; // class ApproxEqual
@@ -299,11 +299,10 @@ class Min final
 {
 public:
 
-  template<class... Args>
+  template<ordered_type... Args>
   constexpr auto operator()(Args&&... args) const noexcept
   {
-    using Result = std::common_type_t<std::remove_cvref_t<Args>...>;
-    return min({static_cast<Result>(std::forward<Args>(args))...});
+    return min(std::forward<Args>(args)...);
   }
 
 }; // class Min
@@ -313,11 +312,10 @@ class Max final
 {
 public:
 
-  template<class... Args>
+  template<ordered_type... Args>
   constexpr auto operator()(Args&&... args) const noexcept
   {
-    using Result = std::common_type_t<std::remove_cvref_t<Args>...>;
-    return max({static_cast<Result>(std::forward<Args>(args))...});
+    return max(std::forward<Args>(args)...);
   }
 
 }; // class Max
@@ -332,7 +330,7 @@ class Add final
 {
 public:
 
-  template<class... Args>
+  template<numeric_type... Args>
   constexpr auto operator()(Args&&... args) const noexcept
   {
     return (std::forward<Args>(args) + ...);
@@ -348,7 +346,7 @@ class Multiply final
 {
 public:
 
-  template<class... Args>
+  template<numeric_type... Args>
   constexpr auto operator()(Args&&... args) const noexcept
   {
     return (std::forward<Args>(args) * ...);
@@ -364,7 +362,7 @@ class AddAssign final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return std::forward<Arg1>(arg1) += std::forward<Arg2>(arg2);
@@ -377,7 +375,7 @@ class SubtractAssign final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return std::forward<Arg1>(arg1) -= std::forward<Arg2>(arg2);
@@ -390,7 +388,7 @@ class MultiplyAssign final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return std::forward<Arg1>(arg1) *= std::forward<Arg2>(arg2);
@@ -403,7 +401,7 @@ class DivideAssign final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return std::forward<Arg1>(arg1) /= std::forward<Arg2>(arg2);
@@ -418,7 +416,7 @@ class Real final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return real(std::forward<Arg>(arg));
@@ -431,7 +429,7 @@ class Imag final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return imag(std::forward<Arg>(arg));
@@ -444,7 +442,7 @@ class Conj final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return conj(std::forward<Arg>(arg));
@@ -459,7 +457,7 @@ class Abs final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return abs(std::forward<Arg>(arg));
@@ -472,7 +470,7 @@ class AbsSquared final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(const Arg& arg) const noexcept
   {
     return real(arg * conj(arg));
@@ -485,7 +483,7 @@ class Sign final
 {
 public:
 
-  template<class Arg>
+  template<ordered_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return sign(std::forward<Arg>(arg));
@@ -500,7 +498,7 @@ class Sqrt final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return sqrt(std::forward<Arg>(arg));
@@ -513,7 +511,7 @@ class Cbrt final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return cbrt(std::forward<Arg>(arg));
@@ -526,7 +524,7 @@ class Pow final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr auto operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return pow(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2));
@@ -541,7 +539,7 @@ class Exp final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return exp(std::forward<Arg>(arg));
@@ -554,7 +552,7 @@ class Exp2 final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return exp2(std::forward<Arg>(arg));
@@ -567,7 +565,7 @@ class Log final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return log(std::forward<Arg>(arg));
@@ -580,7 +578,7 @@ class Log2 final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return log2(std::forward<Arg>(arg));
@@ -593,7 +591,7 @@ class Log10 final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return log10(std::forward<Arg>(arg));
@@ -608,7 +606,7 @@ class Sin final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return sin(std::forward<Arg>(arg));
@@ -621,7 +619,7 @@ class Cos final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return cos(std::forward<Arg>(arg));
@@ -634,7 +632,7 @@ class Tan final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return tan(std::forward<Arg>(arg));
@@ -647,7 +645,7 @@ class Asin final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return asin(std::forward<Arg>(arg));
@@ -660,7 +658,7 @@ class Acos final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return acos(std::forward<Arg>(arg));
@@ -673,7 +671,7 @@ class Atan final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return atan(std::forward<Arg>(arg));
@@ -688,7 +686,7 @@ class Sinh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return sinh(std::forward<Arg>(arg));
@@ -701,7 +699,7 @@ class Cosh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return cosh(std::forward<Arg>(arg));
@@ -714,7 +712,7 @@ class Tanh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return tanh(std::forward<Arg>(arg));
@@ -727,7 +725,7 @@ class Asinh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return asinh(std::forward<Arg>(arg));
@@ -740,7 +738,7 @@ class Acosh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return acosh(std::forward<Arg>(arg));
@@ -753,7 +751,7 @@ class Atanh final
 {
 public:
 
-  template<class Arg>
+  template<numeric_type Arg>
   constexpr auto operator()(Arg&& arg) const noexcept
   {
     return atanh(std::forward<Arg>(arg));
@@ -768,7 +766,7 @@ class DotProduct final
 {
 public:
 
-  template<class Arg1, class Arg2>
+  template<numeric_type Arg1, numeric_type Arg2>
   constexpr auto operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
   {
     return std::forward<Arg1>(arg1) * conj(std::forward<Arg2>(arg2));
