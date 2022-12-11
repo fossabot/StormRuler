@@ -345,14 +345,10 @@ namespace detail_
     return min <= t && t <= max;
   }
 
-  constexpr auto first_(auto x, auto...)
+  template<class Arg>
+  constexpr auto first_(Arg&& x, auto&&...)
   {
-    return x;
-  }
-
-  constexpr bool one_of_(auto x, auto... vals)
-  {
-    return ((x == vals) || ...);
+    return std::forward<Arg>(x);
   }
 
   template<class T1, class T2>

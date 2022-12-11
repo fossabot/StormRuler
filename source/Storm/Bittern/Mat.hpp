@@ -59,7 +59,7 @@ template<std::copyable Elem, size_t... Extents>
   requires std::is_object_v<Elem> && (... && (Extents > 0))
 using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
 
-/// @brief Fixed matrix (rank 1).
+/// @brief Fixed dense matrix (rank 1 specicalization).
 template<std::copyable Elem, size_t Extent>
   requires std::is_object_v<Elem> && (Extent > 0)
 class DenseMatrix<Elem, fixed_shape_t<Extent>> final :
@@ -105,14 +105,6 @@ public:
 
   /// @brief Construct a matrix with element array @p elems.
   /// @{
-  constexpr explicit DenseMatrix(std::array<Elem, Extent>&& elems)
-      : elems_{std::move(elems)}
-  {
-  }
-  constexpr explicit DenseMatrix(const std::array<Elem, Extent>& elems)
-      : elems_{elems}
-  {
-  }
   constexpr explicit DenseMatrix(Elem (&&elems)[Extent])
       : elems_{std::to_array(std::move(elems))}
   {
@@ -171,7 +163,7 @@ public:
 
 }; // class DenseMatrix
 
-/// @brief Fixed matrix (multirank).
+/// @brief Fixed dense matrix (multirank specialization).
 template<std::copyable Elem, size_t Extent, size_t... RestExtents>
   requires std::is_object_v<Elem> && (Extent > 0) && (... && (RestExtents > 0))
 class DenseMatrix<Elem, fixed_shape_t<Extent, RestExtents...>> final :
@@ -218,14 +210,6 @@ public:
 
   /// @brief Construct a matrix with slice array @p slices.
   /// @{
-  constexpr explicit DenseMatrix(std::array<Slice_, Extent>&& slices)
-      : slices_{std::move(slices)}
-  {
-  }
-  constexpr explicit DenseMatrix(const std::array<Slice_, Extent>& slices)
-      : slices_{slices}
-  {
-  }
   constexpr explicit DenseMatrix(Slice_ (&&slices)[Extent])
       : slices_{std::to_array(std::move(slices))}
   {
