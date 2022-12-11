@@ -164,15 +164,14 @@ constexpr real_t volume(const Shape& shape, const Mesh& mesh) noexcept
 template<shape Shape, mesh Mesh>
   requires (!complex_shape<Shape, Mesh> &&
             (mesh_dim_v<Mesh> >= shape_dim_v<Shape>) )
-constexpr mesh_vec_t<Mesh> barycenter(const Shape& shape,
-                                      const Mesh& mesh) noexcept
+constexpr auto barycenter(const Shape& shape, const Mesh& mesh) noexcept
 {
   const auto nodes = shape.nodes();
   mesh_vec_t<Mesh> sum_position{mesh.position(nodes.front())};
   for (const auto& node : nodes | std::views::drop(1)) {
     sum_position += mesh.position(node);
   }
-  return sum_position / nodes.size();
+  return mesh_vec_t<Mesh>{sum_position / nodes.size()};
 }
 
 /// @brief Compute the complex @p shape barycenter.
@@ -180,8 +179,7 @@ template<shape Shape, mesh Mesh>
   requires (complex_shape<Shape, Mesh> &&
             detail_::can_volume_<piece_t<Shape, Mesh>, Mesh> &&
             detail_::can_barycenter_<piece_t<Shape, Mesh>, Mesh>)
-constexpr mesh_vec_t<Mesh> barycenter(const Shape& shape,
-                                      const Mesh& mesh) noexcept
+constexpr auto barycenter(const Shape& shape, const Mesh& mesh) noexcept
 {
   const auto pieces = shape.pieces(mesh);
   auto vol = volume(pieces.front(), mesh);
@@ -190,7 +188,7 @@ constexpr mesh_vec_t<Mesh> barycenter(const Shape& shape,
     const auto dv = volume(piece, mesh);
     vol += dv, vol_center += dv * barycenter(piece, mesh);
   }
-  return vol_center / vol;
+  return mesh_vec_t<Mesh>{vol_center / vol};
 }
 
 /// @brief Compute the complex @p shape normal.
@@ -198,14 +196,14 @@ template<shape Shape, mesh Mesh>
   requires (complex_shape<Shape, Mesh> &&
             detail_::can_volume_<piece_t<Shape, Mesh>, Mesh> &&
             detail_::can_normal_<piece_t<Shape, Mesh>, Mesh>)
-constexpr mesh_vec_t<Mesh> normal(const Shape& shape, const Mesh& mesh) noexcept
+constexpr auto normal(const Shape& shape, const Mesh& mesh) noexcept
 {
   const auto pieces = shape.pieces(mesh);
   auto vol_normal = volume(pieces.front(), mesh) * normal(pieces.front(), mesh);
   for (const auto& piece : pieces | std::views::drop(1)) {
     vol_normal += volume(piece, mesh) * normal(piece, mesh);
   }
-  return normalize(vol_normal);
+  return mesh_vec_t<Mesh>{normalize(vol_normal)};
 }
 
 // -----------------------------------------------------------------------------
@@ -263,13 +261,13 @@ constexpr real_t volume(const Seg& seg, const Mesh& mesh) noexcept
 /// @brief Segment @p seg normal.
 template<mesh Mesh>
   requires (mesh_dim_v<Mesh> == 2)
-constexpr mesh_vec_t<Mesh> normal(const Seg& seg, const Mesh& mesh) noexcept
+constexpr auto normal(const Seg& seg, const Mesh& mesh) noexcept
 {
   const auto v1{mesh.position(seg.n1)}, v2{mesh.position(seg.n2)};
   const auto d = normalize(v2 - v1);
   /// @todo Is sign here correct?
   /// @todo This looks incomplete:
-  return -mesh_vec_t<Mesh>{-d(1, 0), d(0, 0)};
+  return mesh_vec_t<Mesh>{-mesh_vec_t<Mesh>{-d(1), d(0)}};
 }
 
 // -----------------------------------------------------------------------------
@@ -339,7 +337,7 @@ constexpr real_t volume(const Triangle& tri, const Mesh& mesh) noexcept
     // return glm::abs(glm::determinant(d)) / 2.0;
     /// @todo This looks incomplete:
     auto d0 = v2 - v1, d1 = v3 - v1;
-    return 0.5 * abs(d0(0, 0) * d1(1, 0) - d0(1, 0) * d1(0, 0));
+    return 0.5 * abs(d0(0) * d1(1) - d0(1) * d1(0));
   } else {
     return length(cross_product(v2 - v1, v3 - v1)) / 2.0;
   }

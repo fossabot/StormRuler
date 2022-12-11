@@ -104,7 +104,9 @@ constexpr OutMatrix&& copy_elements(OutMatrix&& out_mat, Matrix&& mat) noexcept
 /// @brief Evaluate the matrix @p out_mat elements with
 /// action function @p action_func and arguments @p mats.
 template<class ActionFunc, output_matrix OutMatrix, matrix... Matrices>
-  requires std::regular_invocable<ActionFunc, matrix_element_ref_t<OutMatrix>,
+  requires compatible_matrices_v<OutMatrix, Matrices...> &&
+           std::regular_invocable<ActionFunc, //
+                                  matrix_element_ref_t<OutMatrix>,
                                   matrix_element_ref_t<Matrices>...>
 constexpr OutMatrix&& eval_elements(ActionFunc action_func, //
                                     OutMatrix&& out_mat,
@@ -128,7 +130,7 @@ constexpr OutMatrix& operator<<=(OutMatrix&& out_mat, Matrix&& mat) noexcept
 
 /// @brief Fill the matrix @p out_mat with a scalar @p scal.
 template<matrix OutMatrix, std::copyable Scalar>
-  requires (!matrix<Scalar>)
+  requires std::assignable_from<matrix_element_ref_t<OutMatrix>, Scalar>
 constexpr OutMatrix& fill(OutMatrix& out_mat, Scalar scal)
 {
   return eval_elements(
@@ -162,7 +164,15 @@ constexpr Matrix& fill_randomly(Matrix&& out_mat, //
 /// @param reduce_func Reduction function.
 /// @todo Restrictions!
 /// @{
-template<class Value, class ReduceFunc, matrix Matrix>
+template<class Value, class ReduceFunc, matrix_r<1> Matrix>
+constexpr auto reduce(Value init, ReduceFunc reduce_func, Matrix&& mat)
+{
+  for (size_t row_index = 0; row_index < num_rows(mat); ++row_index) {
+    init = reduce_func(init, mat(row_index));
+  }
+  return init;
+}
+template<class Value, class ReduceFunc, matrix_r<2> Matrix>
 constexpr auto reduce(Value init, ReduceFunc reduce_func, Matrix&& mat)
 {
   for (size_t row_index = 0; row_index < num_rows(mat); ++row_index) {
@@ -172,8 +182,22 @@ constexpr auto reduce(Value init, ReduceFunc reduce_func, Matrix&& mat)
   }
   return init;
 }
+
 template<class Value, class ReduceFunc, class Func, //
-         matrix Matrix, matrix... RestMatrices>
+         matrix_r<1> Matrix, matrix... RestMatrices>
+  requires compatible_matrices_v<Matrix, RestMatrices...>
+constexpr auto reduce(Value init, ReduceFunc reduce_func, Func func,
+                      Matrix&& mat, RestMatrices&&... mats) noexcept
+{
+  STORM_ASSERT_((mat.shape() == mats.shape()) && ...,
+                "Matrix shapes doesn't match!");
+  for (size_t row_index = 0; row_index < num_rows(mat); ++row_index) {
+    init = reduce_func(init, func(mat(row_index), mats(row_index)...));
+  }
+  return init;
+}
+template<class Value, class ReduceFunc, class Func, //
+         matrix_r<2> Matrix, matrix... RestMatrices>
   requires compatible_matrices_v<Matrix, RestMatrices...>
 constexpr auto reduce(Value init, ReduceFunc reduce_func, Func func,
                       Matrix&& mat, RestMatrices&&... mats) noexcept

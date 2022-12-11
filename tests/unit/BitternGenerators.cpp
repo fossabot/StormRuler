@@ -31,8 +31,8 @@ namespace Storm::UnitTests
 
 TEST_CASE("Bittern/CustomGenerators")
 {
-  const Mat2x2<size_t> mat{3_sz, 4_sz, //
-                           5_sz, 6_sz};
+  const DenseMatrix mat{{3_sz, 4_sz}, //
+                        {5_sz, 6_sz}};
 
   auto gen_func = [](size_t i, size_t j) { return 2_sz * ++i + ++j; };
   CHECK(all(generate(shp(2_sz, 2_sz), gen_func) == mat));

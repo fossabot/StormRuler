@@ -47,8 +47,9 @@ concept target_matrix =
     derived_from_crtp_interface<TargetMatrix, TargetMatrixInterface>;
 
 /// @brief CRTP interface to a target matrix.
+/// @todo Should I be non-movable? non-assignable?
 template<crtp_derived TargetMatrix>
-class TargetMatrixInterface : public NonAssignableInterface
+class TargetMatrixInterface
 {
 private:
 
@@ -65,20 +66,33 @@ private:
 
 public:
 
-  /// @brief Assign the matrix @p mat elements from the current matrix.
-  /// @{
+  template<std::copyable Scalar>
+    requires std::assignable_from<matrix_element_ref_t<TargetMatrix>, Scalar>
+  constexpr TargetMatrix& fill(Scalar scalar)
+  {
+    return fill(self_(), std::move(scalar));
+  }
+
+  /// @brief Move-assign the matrix @p mat elements from the current matrix.
   template<matrix Matrix>
     requires assignable_matrix<TargetMatrix, Matrix>
-  constexpr decltype(auto) assign(Matrix&& mat) noexcept
+  constexpr TargetMatrix& move_assign(Matrix&& mat)
+  {
+    return move_elements(self_(), std::forward<Matrix>(mat));
+  }
+
+  /// @brief Copy-assign the matrix @p mat elements from the current matrix.
+  template<matrix Matrix>
+    requires assignable_matrix<TargetMatrix, Matrix>
+  constexpr TargetMatrix& assign(Matrix&& mat)
   {
     return copy_elements(self_(), std::forward<Matrix>(mat));
   }
-  /// @}
 
   /// @todo TO BE REMOVED!
   template<matrix Matrix>
     requires assignable_matrix<TargetMatrix, Matrix>
-  constexpr decltype(auto) operator=(Matrix&& mat) noexcept
+  constexpr TargetMatrix& operator=(Matrix&& mat)
   {
     return assign(std::forward<Matrix>(mat));
   }
@@ -86,7 +100,7 @@ public:
   /// @brief Multiply-assign the current matrix by a scalar @p scal.
   template<std::copyable Scalar>
     requires numeric_matrix<TargetMatrix> && numeric_type<Scalar>
-  constexpr decltype(auto) operator*=(Scalar scal)
+  constexpr TargetMatrix& operator*=(Scalar scal)
   {
     return eval_elements(BindLast{MultiplyAssign{}, std::move(scal)}, *this);
   }
@@ -94,7 +108,7 @@ public:
   /// @brief Divide-assign the current matrix by a scalar @p scal.
   template<std::copyable Scalar>
     requires numeric_matrix<TargetMatrix> && numeric_type<Scalar>
-  constexpr decltype(auto) operator/=(Scalar scal)
+  constexpr TargetMatrix& operator/=(Scalar scal)
   {
     return eval_elements(BindLast{DivideAssign{}, std::move(scal)}, *this);
   }
@@ -103,7 +117,7 @@ public:
   template<matrix Matrix>
     requires compatible_matrices_v<TargetMatrix, Matrix> && //
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
-  constexpr decltype(auto) operator+=(Matrix&& mat)
+  constexpr TargetMatrix& operator+=(Matrix&& mat)
   {
     return eval_elements(AddAssign{}, self_(), std::forward<Matrix>(mat));
   }
@@ -112,7 +126,7 @@ public:
   template<matrix Matrix>
     requires compatible_matrices_v<TargetMatrix, Matrix> && //
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
-  constexpr decltype(auto) operator-=(Matrix&& mat)
+  constexpr TargetMatrix& operator-=(Matrix&& mat)
   {
     return eval_elements(SubtractAssign{}, self_(), std::forward<Matrix>(mat));
   }
@@ -122,7 +136,7 @@ public:
   template<matrix Matrix>
     requires compatible_matrices_v<TargetMatrix, Matrix> && //
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
-  constexpr decltype(auto) operator*=(Matrix&& mat)
+  constexpr TargetMatrix& operator*=(Matrix&& mat)
   {
     return eval_elements(MultiplyAssign{}, self_(), std::forward<Matrix>(mat));
   }
@@ -131,7 +145,7 @@ public:
   template<matrix Matrix>
     requires compatible_matrices_v<TargetMatrix, Matrix> && //
              numeric_matrix<TargetMatrix> && numeric_matrix<Matrix>
-  constexpr decltype(auto) operator/=(Matrix&& mat)
+  constexpr TargetMatrix& operator/=(Matrix&& mat)
   {
     return eval_elements(DivideAssign{}, self_(), std::forward<Matrix>(mat));
   }

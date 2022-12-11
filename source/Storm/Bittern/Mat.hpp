@@ -59,6 +59,11 @@ template<std::copyable Elem, size_t... Extents>
   requires std::is_object_v<Elem> && (... && (Extents > 0))
 using FixedMatrix = DenseMatrix<Elem, fixed_shape_t<Extents...>>;
 
+/// @brief Dense vector with fixed shape.
+template<std::copyable Elem, size_t Extent>
+  requires std::is_object_v<Elem> && (Extent > 0)
+using FixedVector = FixedMatrix<Elem, Extent>;
+
 /// @brief Fixed dense matrix (rank 1 specicalization).
 template<std::copyable Elem, size_t Extent>
   requires std::is_object_v<Elem> && (Extent > 0)
@@ -76,7 +81,8 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires assignable_matrix<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix> &&
+             (!std::same_as<DenseMatrix, std::remove_cvref_t<Matrix>>)
   constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -84,7 +90,8 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires assignable_matrix<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix> &&
+             (!std::same_as<DenseMatrix, std::remove_cvref_t<Matrix>>)
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -95,7 +102,7 @@ public:
   template<class... Elems>
     requires (Extent == sizeof...(Elems)) &&
              ((std::constructible_from<Elem, Elems> &&
-               !std::derived_from<std::remove_cvref_t<Elems>, DenseMatrix>) &&
+               !std::same_as<DenseMatrix, std::remove_cvref_t<Elems>>) &&
               ...)
   constexpr explicit DenseMatrix(Elems&&... elems)
       : elems_{Elem{std::forward<Elems>(elems)}...}
@@ -183,7 +190,8 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires assignable_matrix<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix> &&
+             (!std::same_as<DenseMatrix, std::remove_cvref_t<Matrix>>)
   constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -191,7 +199,8 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires assignable_matrix<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix> &&
+             (!std::same_as<DenseMatrix, std::remove_cvref_t<Matrix>>)
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -201,7 +210,7 @@ public:
   template<matrix... Slices>
     requires (Extent == sizeof...(Slices)) &&
              ((std::constructible_from<Slice_, Slices> &&
-               !std::derived_from<std::remove_cvref_t<Slices>, DenseMatrix>) &&
+               !std::same_as<DenseMatrix, std::remove_cvref_t<Slices>>) &&
               ...)
   constexpr explicit DenseMatrix(Slices&&... slices)
       : slices_{Slice_{std::forward<Slices>(slices)}...}
@@ -308,94 +317,9 @@ DenseMatrix(const Slices (&... _)[SecondExtent])
 
 // -----------------------------------------------------------------------------
 
-/// @brief Statically-sized matrix.
-/// @todo This is a legacy matrix. Do not use it!
+/// @brief Fixed-sized (small) matrix.
 template<class Elem, size_t NumRows, size_t NumCols>
-class StaticMatrix final :
-    public TargetMatrixInterface<StaticMatrix<Elem, NumRows, NumCols>>
-{
-private:
-
-  std::array<Elem, NumRows * NumCols> elems_{};
-
-public:
-
-  /// @brief Construct a matrix.
-  constexpr StaticMatrix(const Elem& init = {}) noexcept
-  {
-    fill(init);
-  }
-
-  /// @brief Construct a matrix with the elements.
-  template<class... RestElems>
-    requires (std::convertible_to<RestElems, Elem> && ...) &&
-             (sizeof...(RestElems) + 1 == NumRows * NumCols)
-  constexpr explicit StaticMatrix(const Elem& first_elem,
-                                  const RestElems&... rest_elems) noexcept
-      : elems_{first_elem, static_cast<Elem>(rest_elems)...}
-  {
-  }
-
-  /// @brief Construct a matrix with another matrix.
-  template<matrix Matrix>
-  constexpr StaticMatrix(Matrix&& other) noexcept
-  {
-    this->assign(std::forward<Matrix>(other));
-  }
-
-  using TargetMatrixInterface<StaticMatrix<Elem, NumRows, NumCols>>::operator=;
-
-  /// @brief Fill the matrix with @p value.
-  constexpr void fill(const Elem& value) noexcept
-  {
-    for (size_t row_index = 0; row_index < NumRows; ++row_index) {
-      for (size_t col_index = 0; col_index < NumCols; ++col_index) {
-        (*this)(row_index, col_index) = value;
-      }
-    }
-  }
-
-  /// @brief Matrix shape.
-  static constexpr auto shape() noexcept
-  {
-    return shp<NumRows, NumCols>();
-  }
-
-  /// @brief Get the matrix coefficient at @p row_index and @p col_index.
-  /// @{
-  constexpr Elem& operator()(size_t row_index, //
-                             size_t col_index = 0) noexcept
-  {
-    STORM_ASSERT_(in_range(shape(), row_index, col_index),
-                  "Indices are out of range!");
-    return elems_[row_index * NumCols + col_index];
-  }
-  constexpr const Elem& operator()(size_t row_index,
-                                   size_t col_index = 0) const noexcept
-  {
-    STORM_ASSERT_(in_range(shape(), row_index, col_index),
-                  "Indices are out of range!");
-    return elems_[row_index * NumCols + col_index];
-  }
-  /// @}
-
-  /// @todo Transition code! Remove me!
-  /// @{
-  constexpr Elem& operator[](size_t row_index) noexcept
-  {
-    return (*this)(row_index);
-  }
-  constexpr const Elem& operator[](size_t row_index) const noexcept
-  {
-    return (*this)(row_index);
-  }
-  /// @}
-
-}; // class StaticMatrix
-
-/// @brief Statically-sized (small) matrix.
-template<class Elem, size_t NumRows, size_t NumCols>
-using Mat = StaticMatrix<Elem, NumRows, NumCols>;
+using Mat = FixedMatrix<Elem, NumRows, NumCols>;
 
 /// @brief 2x2 matrix.
 template<class Elem>
@@ -409,9 +333,9 @@ using Mat3x3 = Mat<Elem, 3, 3>;
 template<class Elem>
 using Mat4x4 = Mat<Elem, 4, 4>;
 
-/// @brief Statically-sized (small) vector.
+/// @brief Fixed-sized (small) vector.
 template<class Elem, size_t NumRows>
-using Vec = Mat<Elem, NumRows, 1>;
+using Vec = FixedVector<Elem, NumRows>;
 
 /// @brief 2D vector.
 template<class Elem>
