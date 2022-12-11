@@ -41,7 +41,7 @@ namespace Storm
 /// @brief Element-wise apply function to the matrices.
 template<std::copy_constructible Func, matrix_view... Matrices>
   requires std::is_object_v<Func> && (sizeof...(Matrices) >= 1) &&
-           std::regular_invocable<Func, matrix_element_t<Matrices>...>
+           std::regular_invocable<Func, matrix_element_ref_t<Matrices>...>
 class MatrixMapView final :
     public MatrixViewInterface<MatrixMapView<Func, Matrices...>>
 {
@@ -142,8 +142,8 @@ template<viewable_matrix CondMatrix, //
          viewable_matrix ThenMatrix, viewable_matrix ElseMatrix>
   requires compatible_matrices_v<CondMatrix, ThenMatrix, ElseMatrix> &&
            bool_matrix<CondMatrix> &&
-           std::common_with<matrix_element_t<ThenMatrix>,
-                            matrix_element_t<ElseMatrix>>
+           std::common_with<matrix_element_ref_t<ThenMatrix>,
+                            matrix_element_ref_t<ElseMatrix>>
 constexpr auto merge(CondMatrix&& cond_mat, //
                      ThenMatrix&& then_mat, ElseMatrix&& else_mat)
 {

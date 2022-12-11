@@ -28,6 +28,7 @@
 #include <concepts>
 #include <functional>
 #include <limits>
+#include <new>
 #include <tuple>
 
 namespace Storm
@@ -152,6 +153,48 @@ public:
 }; // class Compose
 
 // -----------------------------------------------------------------------------
+
+/// @brief Construct action function.
+class Construct final
+{
+public:
+
+  template<class Obj, class... Args>
+    requires std::is_object_v<Obj> && std::constructible_from<Obj, Args...>
+  constexpr Obj& operator()(Obj& obj, Args&&... args) const
+  {
+    return *new (&obj) Obj(std::forward<Args>(args)...);
+  }
+
+}; // class Construct
+
+/// @brief Move-assign action function.
+class MoveAssign final
+{
+public:
+
+  template<class Arg1, class Arg2>
+    requires std::assignable_from<Arg1, Arg2>
+  constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
+  {
+    return std::forward<Arg1>(arg1) = std::move(std::forward<Arg2>(arg2));
+  }
+
+}; // class MoveAssign
+
+/// @brief Copy-assign action function.
+class CopyAssign final
+{
+public:
+
+  template<class Arg1, class Arg2>
+    requires std::assignable_from<Arg1, Arg2>
+  constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
+  {
+    return std::forward<Arg1>(arg1) = std::forward<Arg2>(arg2);
+  }
+
+}; // class CopyAssign
 
 /// @brief Static cast function.
 template<class To>
@@ -315,19 +358,6 @@ public:
 
 /// @brief Divide function.
 using Divide = std::divides<>;
-
-/// @brief Assign action function.
-class Assign final
-{
-public:
-
-  template<class Arg1, class Arg2>
-  constexpr decltype(auto) operator()(Arg1&& arg1, Arg2&& arg2) const noexcept
-  {
-    return std::forward<Arg1>(arg1) = std::forward<Arg2>(arg2);
-  }
-
-}; // class Assign
 
 /// @brief Add-assign action function.
 class AddAssign final

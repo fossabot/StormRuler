@@ -65,21 +65,23 @@ private:
 
 public:
 
-  /// @brief Assign the current matrix elements from matrix @p mat.
+  /// @brief Assign the matrix @p mat elements from the current matrix.
   /// @{
   template<matrix Matrix>
-    requires matrix_assignable_from<TargetMatrix, Matrix>
+    requires assignable_matrix<TargetMatrix, Matrix>
   constexpr decltype(auto) assign(Matrix&& mat) noexcept
   {
-    return assign_elements(self_(), std::forward<Matrix>(mat));
+    return copy_elements(self_(), std::forward<Matrix>(mat));
   }
+  /// @}
+
+  /// @todo TO BE REMOVED!
   template<matrix Matrix>
-    requires matrix_assignable_from<TargetMatrix, Matrix>
+    requires assignable_matrix<TargetMatrix, Matrix>
   constexpr decltype(auto) operator=(Matrix&& mat) noexcept
   {
     return assign(std::forward<Matrix>(mat));
   }
-  /// @}
 
   /// @brief Multiply-assign the current matrix by a scalar @p scal.
   template<std::copyable Scalar>

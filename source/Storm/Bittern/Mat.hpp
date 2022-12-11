@@ -76,7 +76,7 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires matrix_assignable_from<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix>
   constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -84,7 +84,7 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires matrix_assignable_from<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix>
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -183,7 +183,7 @@ public:
 
   /// @brief Construct a matrix with elements of the matrix @p mat.
   template<matrix Matrix>
-    requires matrix_assignable_from<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix>
   constexpr explicit DenseMatrix(Matrix&& mat) noexcept
   {
     this->assign(std::forward<Matrix>(mat));
@@ -191,7 +191,7 @@ public:
 
   /// @brief Assign the current matrix elements from matrix @p mat.
   template<matrix Matrix>
-    requires matrix_assignable_from<DenseMatrix, Matrix>
+    requires assignable_matrix<DenseMatrix, Matrix>
   constexpr DenseMatrix& operator=(Matrix&& mat) noexcept
   {
     return this->assign(std::forward<Matrix>(mat));
@@ -340,7 +340,7 @@ public:
   template<matrix Matrix>
   constexpr StaticMatrix(Matrix&& other) noexcept
   {
-    assign_elements(*this, std::forward<Matrix>(other));
+    this->assign(std::forward<Matrix>(other));
   }
 
   using TargetMatrixInterface<StaticMatrix<Elem, NumRows, NumCols>>::operator=;

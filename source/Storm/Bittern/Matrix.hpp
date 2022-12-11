@@ -99,19 +99,14 @@ constexpr bool in_range(const Shape& shape, Indices...)
 
 // -----------------------------------------------------------------------------
 
-/// @brief Matrix element type, as is.
+/// @brief Matrix element reference type.
 template<matrix Matrix>
-using matrix_element_decltype_t = decltype( //
-    std::apply(std::declval<Matrix>(), std::declval<Matrix>().shape()));
+using matrix_element_ref_t = decltype( //
+    std::apply(std::declval<Matrix&>(), std::declval<Matrix>().shape()));
 
 /// @brief Matrix element type.
 template<matrix Matrix>
-using matrix_element_t = std::remove_cvref_t<matrix_element_decltype_t<Matrix>>;
-
-/// @brief Matrix element reference type.
-template<matrix Matrix>
-  requires std::is_reference_v<matrix_element_decltype_t<Matrix>>
-using matrix_element_ref_t = matrix_element_decltype_t<Matrix>;
+using matrix_element_t = std::remove_cvref_t<matrix_element_ref_t<Matrix>>;
 
 /// @brief Matrix with assignable elements.
 template<class Matrix>
@@ -122,7 +117,7 @@ concept output_matrix =
 
 /// @brief Matrix elements are assignable from the elements of another matrix.
 template<class OutMatrix, class Matrix>
-concept matrix_assignable_from =
+concept assignable_matrix =
     output_matrix<OutMatrix> && matrix<Matrix> &&
     compatible_matrices_v<OutMatrix, Matrix> &&
     std::assignable_from<matrix_element_ref_t<OutMatrix>,
