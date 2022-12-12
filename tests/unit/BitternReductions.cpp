@@ -20,7 +20,7 @@
 
 #include "./_UnitTests.hpp"
 
-#include <Storm/Bittern/Mat.hpp>
+#include <Storm/Bittern/MatrixDense.hpp>
 
 #include <doctest/doctest.h>
 
