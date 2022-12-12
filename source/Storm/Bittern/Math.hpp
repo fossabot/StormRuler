@@ -127,9 +127,17 @@ constexpr auto rad2deg(Real&& radians) noexcept
 /// @brief @f$ i = \sqrt{-1} @f$.
 inline constexpr complex_t i{0.0_dp, 1.0_dp};
 
-using std::real;
+template<numeric_type Arg>
+constexpr auto real(Arg&& arg) noexcept
+{
+  return std::real(std::forward<Arg>(arg));
+}
 
-using std::imag;
+template<numeric_type Arg>
+constexpr auto imag(Arg&& arg) noexcept
+{
+  return std::imag(std::forward<Arg>(arg));
+}
 
 /// @brief Conjugate of real number argument @p arg (noop).
 /// @note Unlike standard function, this function preserves real type.
@@ -154,7 +162,11 @@ constexpr int sign(const Arg& arg) noexcept
   return (Arg{0} < arg) - (arg < Arg{0});
 }
 
-using std::abs;
+template<numeric_type Arg>
+constexpr auto abs(Arg&& arg) noexcept
+{
+  return std::abs(std::forward<Arg>(arg));
+}
 
 /// @brief Minimum the arguments @p args.
 template<ordered_type... Args>
@@ -174,17 +186,29 @@ constexpr auto max(Args&&... args) noexcept
 
 // -----------------------------------------------------------------------------
 
-using std::pow;
-
 /// @brief @f$ \sqrt{2} @f$ constant.
 inline constexpr real_t sqrt2 = std::numbers::sqrt2_v<real_t>;
 
 /// @brief @f$ \sqrt{3} @f$ constant.
 inline constexpr real_t sqrt3 = std::numbers::sqrt3_v<real_t>;
 
-using std::sqrt;
+template<numeric_type Arg1, numeric_type Arg2>
+constexpr auto pow(Arg1&& arg1, Arg2&& arg2) noexcept
+{
+  return std::pow(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2));
+}
 
-using std::cbrt;
+template<numeric_type Arg>
+constexpr auto sqrt(Arg&& arg) noexcept
+{
+  return std::sqrt(std::forward<Arg>(arg));
+}
+
+template<numeric_type Arg>
+constexpr auto cbrt(Arg&& arg) noexcept
+{
+  return std::cbrt(std::forward<Arg>(arg));
+}
 
 using std::hypot;
 
@@ -193,45 +217,113 @@ using std::hypot;
 /// @brief @f$ e @f$ constant.
 inline constexpr real_t e = std::numbers::e_v<real_t>;
 
-using std::exp;
+template<numeric_type Arg>
+constexpr auto exp(Arg&& arg) noexcept
+{
+  return std::exp(std::forward<Arg>(arg));
+}
 
-using std::exp2;
+template<numeric_type Arg>
+constexpr auto exp2(Arg&& arg) noexcept
+{
+  return std::exp2(std::forward<Arg>(arg));
+}
 
-using std::log;
+template<numeric_type Arg>
+constexpr auto log(Arg&& arg) noexcept
+{
+  return std::log(std::forward<Arg>(arg));
+}
 
-using std::log2;
+template<numeric_type Arg>
+constexpr auto log2(Arg&& arg) noexcept
+{
+  return std::log2(std::forward<Arg>(arg));
+}
 
-using std::log10;
+template<numeric_type Arg>
+constexpr auto log10(Arg&& arg) noexcept
+{
+  return std::log10(std::forward<Arg>(arg));
+}
 
 // -----------------------------------------------------------------------------
 
-using std::sin;
+template<numeric_type Arg>
+constexpr auto sin(Arg&& arg) noexcept
+{
+  return std::sin(std::forward<Arg>(arg));
+}
 
-using std::cos;
+template<numeric_type Arg>
+constexpr auto cos(Arg&& arg) noexcept
+{
+  return std::cos(std::forward<Arg>(arg));
+}
 
-using std::tan;
+template<numeric_type Arg>
+constexpr auto tan(Arg&& arg) noexcept
+{
+  return std::tan(std::forward<Arg>(arg));
+}
 
-using std::asin;
+template<numeric_type Arg>
+constexpr auto asin(Arg&& arg) noexcept
+{
+  return std::asin(std::forward<Arg>(arg));
+}
 
-using std::acos;
+template<numeric_type Arg>
+constexpr auto acos(Arg&& arg) noexcept
+{
+  return std::acos(std::forward<Arg>(arg));
+}
 
-using std::atan;
+template<numeric_type Arg>
+constexpr auto atan(Arg&& arg) noexcept
+{
+  return std::atan(std::forward<Arg>(arg));
+}
 
 using std::atan2;
 
 // -----------------------------------------------------------------------------
 
-using std::sinh;
+template<numeric_type Arg>
+constexpr auto sinh(Arg&& arg) noexcept
+{
+  return std::sinh(std::forward<Arg>(arg));
+}
 
-using std::cosh;
+template<numeric_type Arg>
+constexpr auto cosh(Arg&& arg) noexcept
+{
+  return std::cosh(std::forward<Arg>(arg));
+}
 
-using std::tanh;
+template<numeric_type Arg>
+constexpr auto tanh(Arg&& arg) noexcept
+{
+  return std::tanh(std::forward<Arg>(arg));
+}
 
-using std::asinh;
+template<numeric_type Arg>
+constexpr auto asinh(Arg&& arg) noexcept
+{
+  return std::asinh(std::forward<Arg>(arg));
+}
 
-using std::acosh;
+template<numeric_type Arg>
+constexpr auto acosh(Arg&& arg) noexcept
+{
+  return std::acosh(std::forward<Arg>(arg));
+}
 
-using std::atanh;
+template<numeric_type Arg>
+constexpr auto atanh(Arg&& arg) noexcept
+{
+  return std::atan(std::forward<Arg>(arg));
+}
 
 // -----------------------------------------------------------------------------
 
