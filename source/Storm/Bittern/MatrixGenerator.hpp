@@ -60,7 +60,7 @@ private:
 public:
 
   /// @brief Construct a generator view.
-  constexpr MatrixGeneratorView(Shape shape, Func func)
+  constexpr MatrixGeneratorView(Shape shape, Func func) noexcept
       : shape_{std::move(shape)}, func_{std::move(func)}
   {
   }
@@ -84,7 +84,7 @@ public:
 
 /// @brief Generate a matrix of shape @p shape with function @p func.
 template<shape Shape, std::copy_constructible Func>
-constexpr auto generate(Shape shape, Func func)
+constexpr auto generate(Shape shape, Func func) noexcept
 {
   return MatrixGeneratorView{std::move(shape), std::move(func)};
 }

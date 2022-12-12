@@ -55,7 +55,7 @@ private:
 public:
 
   /// @brief Construct a map view.
-  constexpr explicit MatrixMapView(Func func, Matrices... mats)
+  constexpr explicit MatrixMapView(Func func, Matrices... mats) noexcept
       : func_{std::move(func)}, mats_{std::move(mats)...}
   {
     std::apply(
@@ -94,7 +94,7 @@ MatrixMapView(Func, Matrices&&...)
 template<std::copy_constructible Func, viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...> &&
            std::regular_invocable<Func, matrix_element_t<Matrices>...>
-constexpr auto map(Func func, Matrices&&... mats)
+constexpr auto map(Func func, Matrices&&... mats) noexcept
 {
   return MatrixMapView{std::move(func), std::forward<Matrices>(mats)...};
 }
@@ -105,7 +105,7 @@ constexpr auto map(Func func, Matrices&&... mats)
 /// @tparam To Type, the elements would be cased to.
 template<class To, viewable_matrix Matrix>
   requires std::convertible_to<matrix_element_t<Matrix>, To>
-constexpr auto cast_matrix(Matrix&& mat)
+constexpr auto cast_matrix(Matrix&& mat) noexcept
 {
   return map(Cast<To>{}, std::forward<Matrix>(mat));
 }
@@ -115,7 +115,7 @@ constexpr auto cast_matrix(Matrix&& mat)
 /// @brief Logically negate the boolean matrix @p mat.
 template<viewable_matrix Matrix>
   requires bool_matrix<Matrix>
-constexpr auto operator!(Matrix&& mat)
+constexpr auto operator!(Matrix&& mat) noexcept
 {
   return map(Not{}, std::forward<Matrix>(mat));
 }
@@ -123,7 +123,7 @@ constexpr auto operator!(Matrix&& mat)
 /// @brief Element-wise logically AND the boolean matrices @p mats.
 template<viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...> && (... && bool_matrix<Matrices>)
-constexpr auto matrix_and(Matrices&&... mats)
+constexpr auto matrix_and(Matrices&&... mats) noexcept
 {
   return map(And{}, std::forward<Matrices>(mats)...);
 }
@@ -131,7 +131,7 @@ constexpr auto matrix_and(Matrices&&... mats)
 /// @brief Element-wise logically OR the boolean matrices @p mats.
 template<viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...> && (... && bool_matrix<Matrices>)
-constexpr auto matrix_or(Matrices&&... mats)
+constexpr auto matrix_or(Matrices&&... mats) noexcept
 {
   return map(Or{}, std::forward<Matrices>(mats)...);
 }
@@ -145,7 +145,7 @@ template<viewable_matrix CondMatrix, //
            std::common_with<matrix_element_ref_t<ThenMatrix>,
                             matrix_element_ref_t<ElseMatrix>>
 constexpr auto merge(CondMatrix&& cond_mat, //
-                     ThenMatrix&& then_mat, ElseMatrix&& else_mat)
+                     ThenMatrix&& then_mat, ElseMatrix&& else_mat) noexcept
 {
   return map(Merge{}, //
              std::forward<CondMatrix>(cond_mat),
@@ -159,35 +159,35 @@ constexpr auto merge(CondMatrix&& cond_mat, //
 /// @{
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2>
-constexpr auto operator==(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator==(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Equal{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2>
-constexpr auto operator!=(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator!=(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(NotEqual{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2>
-constexpr auto operator<(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator<(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Less{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2>
-constexpr auto operator<=(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator<=(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(LessEqual{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2>
-constexpr auto operator>(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator>(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Greater{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
@@ -207,7 +207,7 @@ constexpr auto operator>=(Matrix1&& mat1, Matrix2&& mat2)
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto approx_equal(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto approx_equal(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(ApproxEqual{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
@@ -216,7 +216,7 @@ template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
 constexpr auto approx_equal(Matrix1&& mat1, Matrix2&& mat2,
-                            long double tolerance)
+                            long double tolerance) noexcept
 {
   STORM_ASSERT_(tolerance > 0.0l, "Negative tolerance!");
   return map(ApproxEqual{tolerance}, //
@@ -227,7 +227,7 @@ constexpr auto approx_equal(Matrix1&& mat1, Matrix2&& mat2,
 /// @brief Element-wise minimum of the matrices.
 template<viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...>
-constexpr auto min(Matrices&&... matrices)
+constexpr auto min(Matrices&&... matrices) noexcept
 {
   return map(Min{}, std::forward<Matrices>(matrices)...);
 }
@@ -235,7 +235,7 @@ constexpr auto min(Matrices&&... matrices)
 /// @brief Element-wise maximum of the matrices.
 template<viewable_matrix... Matrices>
   requires compatible_matrices_v<Matrices...>
-constexpr auto max(Matrices&&... matrices)
+constexpr auto max(Matrices&&... matrices) noexcept
 {
   return map(Max{}, std::forward<Matrices>(matrices)...);
 }
@@ -245,7 +245,7 @@ constexpr auto max(Matrices&&... matrices)
 /// @brief "+" the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto operator+(Matrix&& mat)
+constexpr auto operator+(Matrix&& mat) noexcept
 {
   return map(Identity{}, std::forward<Matrix>(mat));
 }
@@ -253,7 +253,7 @@ constexpr auto operator+(Matrix&& mat)
 /// @brief Negate the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto operator-(Matrix&& mat)
+constexpr auto operator-(Matrix&& mat) noexcept
 {
   return map(Negate{}, std::forward<Matrix>(mat));
 }
@@ -262,14 +262,14 @@ constexpr auto operator-(Matrix&& mat)
 /// @{
 template<std::copyable Scalar, viewable_matrix Matrix>
   requires numeric_type<Scalar> && numeric_matrix<Matrix>
-constexpr auto operator*(Scalar scal, Matrix&& mat)
+constexpr auto operator*(Scalar scal, Matrix&& mat) noexcept
 {
   return map(BindFirst{Multiply{}, std::move(scal)}, //
              std::forward<Matrix>(mat));
 }
 template<viewable_matrix Matrix, std::copyable Scalar>
   requires numeric_matrix<Matrix> && numeric_type<Scalar>
-constexpr auto operator*(Matrix&& mat, Scalar scal)
+constexpr auto operator*(Matrix&& mat, Scalar scal) noexcept
 {
   return map(BindLast{Multiply{}, std::move(scal)}, //
              std::forward<Matrix>(mat));
@@ -279,7 +279,7 @@ constexpr auto operator*(Matrix&& mat, Scalar scal)
 /// @brief Divide the scalar @p scal by a matrix @p mat.
 template<std::copyable Scalar, viewable_matrix Matrix>
   requires numeric_type<Scalar> && numeric_matrix<Matrix>
-constexpr auto operator/(Scalar scal, Matrix&& mat)
+constexpr auto operator/(Scalar scal, Matrix&& mat) noexcept
 {
   return map(BindFirst{Divide{}, std::move(scal)}, //
              std::forward<Matrix>(mat));
@@ -287,7 +287,7 @@ constexpr auto operator/(Scalar scal, Matrix&& mat)
 /// @brief Divide the matrix @p mat by a scalar @p scal.
 template<viewable_matrix Matrix, std::copyable Scalar>
   requires numeric_matrix<Matrix> && numeric_type<Scalar>
-constexpr auto operator/(Matrix&& mat, Scalar scal)
+constexpr auto operator/(Matrix&& mat, Scalar scal) noexcept
 {
   return map(BindLast{Divide{}, std::move(scal)}, //
              std::forward<Matrix>(mat));
@@ -297,7 +297,7 @@ constexpr auto operator/(Matrix&& mat, Scalar scal)
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto operator+(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator+(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Add{}, std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
@@ -306,7 +306,7 @@ constexpr auto operator+(Matrix1&& mat1, Matrix2&& mat2)
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto operator-(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator-(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Subtract{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
@@ -316,7 +316,7 @@ constexpr auto operator-(Matrix1&& mat1, Matrix2&& mat2)
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto operator*(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator*(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Multiply{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
@@ -326,7 +326,7 @@ constexpr auto operator*(Matrix1&& mat1, Matrix2&& mat2)
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires compatible_matrices_v<Matrix1, Matrix2> && //
            numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto operator/(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto operator/(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Divide{}, //
              std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
@@ -335,7 +335,7 @@ constexpr auto operator/(Matrix1&& mat1, Matrix2&& mat2)
 /// @brief Normalize the matrix @p mat (divide by it's norm).
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto normalize(Matrix&& mat)
+constexpr auto normalize(Matrix&& mat) noexcept
 {
   auto mat_view = to_matrix_view(std::forward<Matrix>(mat));
   const auto mat_norm = norm_2(mat_view);
@@ -347,7 +347,7 @@ constexpr auto normalize(Matrix&& mat)
 /// @brief Get the element-wise real component of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto real(Matrix&& mat)
+constexpr auto real(Matrix&& mat) noexcept
 {
   return map(Real{}, std::forward<Matrix>(mat));
 }
@@ -355,7 +355,7 @@ constexpr auto real(Matrix&& mat)
 /// @brief Get the element-wise imaginary component of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto imag(Matrix&& mat)
+constexpr auto imag(Matrix&& mat) noexcept
 {
   return map(Imag{}, std::forward<Matrix>(mat));
 }
@@ -363,7 +363,7 @@ constexpr auto imag(Matrix&& mat)
 /// @brief Element-wise conjugate the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto conj(Matrix&& mat)
+constexpr auto conj(Matrix&& mat) noexcept
 {
   return map(Conj{}, std::forward<Matrix>(mat));
 }
@@ -373,7 +373,7 @@ constexpr auto conj(Matrix&& mat)
 /// @brief Compute the element-wise absolute value of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto abs(Matrix&& mat)
+constexpr auto abs(Matrix&& mat) noexcept
 {
   return map(Abs{}, std::forward<Matrix>(mat));
 }
@@ -381,7 +381,7 @@ constexpr auto abs(Matrix&& mat)
 /// @brief Compute the element-wise sign of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires real_matrix<Matrix> || integer_matrix<Matrix>
-constexpr auto sign(Matrix&& mat)
+constexpr auto sign(Matrix&& mat) noexcept
 {
   return map(Sign{}, std::forward<Matrix>(mat));
 }
@@ -391,7 +391,7 @@ constexpr auto sign(Matrix&& mat)
 /// @brief Compute the element-wise square root of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto sqrt(Matrix&& mat)
+constexpr auto sqrt(Matrix&& mat) noexcept
 {
   return map(Sqrt{}, std::forward<Matrix>(mat));
 }
@@ -399,27 +399,27 @@ constexpr auto sqrt(Matrix&& mat)
 /// @brief Compute the element-wise cube root of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto cbrt(Matrix&& mat)
+constexpr auto cbrt(Matrix&& mat) noexcept
 {
   return map(Cbrt{}, std::forward<Matrix>(mat));
 }
 
 template<std::copyable Scalar, viewable_matrix Matrix>
   requires numeric_type<Scalar> && numeric_matrix<Matrix>
-constexpr auto pow(Scalar scal, Matrix&& mat)
+constexpr auto pow(Scalar scal, Matrix&& mat) noexcept
 {
   return map(BindFirst{Pow{}, scal}, std::forward<Matrix>(mat));
 }
 /// @brief Element-wise raise matrix @p to the power @p power.
 template<viewable_matrix Matrix, std::copyable Scalar>
   requires numeric_matrix<Matrix> && numeric_type<Scalar>
-constexpr auto pow(Matrix&& mat, Scalar power)
+constexpr auto pow(Matrix&& mat, Scalar power) noexcept
 {
   return map(BindLast{Pow{}, power}, std::forward<Matrix>(mat));
 }
 template<viewable_matrix Matrix1, viewable_matrix Matrix2>
   requires numeric_matrix<Matrix1> && numeric_matrix<Matrix2>
-constexpr auto pow(Matrix1&& mat1, Matrix2&& mat2)
+constexpr auto pow(Matrix1&& mat1, Matrix2&& mat2) noexcept
 {
   return map(Pow{}, std::forward<Matrix1>(mat1), std::forward<Matrix2>(mat2));
 }
@@ -429,7 +429,7 @@ constexpr auto pow(Matrix1&& mat1, Matrix2&& mat2)
 /// @brief Compute the element-wise exponent of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto exp(Matrix&& mat)
+constexpr auto exp(Matrix&& mat) noexcept
 {
   return map(Exp{}, std::forward<Matrix>(mat));
 }
@@ -437,7 +437,7 @@ constexpr auto exp(Matrix&& mat)
 /// @brief Compute the element-wise exponent (base 2) of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto exp2(Matrix&& mat)
+constexpr auto exp2(Matrix&& mat) noexcept
 {
   return map(Exp2{}, std::forward<Matrix>(mat));
 }
@@ -445,7 +445,7 @@ constexpr auto exp2(Matrix&& mat)
 /// @brief Compute the element-wise logarithm of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto log(Matrix&& mat)
+constexpr auto log(Matrix&& mat) noexcept
 {
   return map(Log{}, std::forward<Matrix>(mat));
 }
@@ -453,7 +453,7 @@ constexpr auto log(Matrix&& mat)
 /// @brief Compute the element-wise logarithm (base 2) of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto log2(Matrix&& mat)
+constexpr auto log2(Matrix&& mat) noexcept
 {
   return map(Log2{}, std::forward<Matrix>(mat));
 }
@@ -461,7 +461,7 @@ constexpr auto log2(Matrix&& mat)
 /// @brief Compute the element-wise logarithm (base 10) of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto log10(Matrix&& mat)
+constexpr auto log10(Matrix&& mat) noexcept
 {
   return map(Log10{}, std::forward<Matrix>(mat));
 }
@@ -471,7 +471,7 @@ constexpr auto log10(Matrix&& mat)
 /// @brief Compute the element-wise sine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto sin(Matrix&& mat)
+constexpr auto sin(Matrix&& mat) noexcept
 {
   return map(Sin{}, std::forward<Matrix>(mat));
 }
@@ -479,7 +479,7 @@ constexpr auto sin(Matrix&& mat)
 /// @brief Compute the element-wise cosine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto cos(Matrix&& mat)
+constexpr auto cos(Matrix&& mat) noexcept
 {
   return map(Cos{}, std::forward<Matrix>(mat));
 }
@@ -487,7 +487,7 @@ constexpr auto cos(Matrix&& mat)
 /// @brief Compute the element-wise tangent of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto tan(Matrix&& mat)
+constexpr auto tan(Matrix&& mat) noexcept
 {
   return map(Tan{}, std::forward<Matrix>(mat));
 }
@@ -495,7 +495,7 @@ constexpr auto tan(Matrix&& mat)
 /// @brief Compute the element-wise inverse sine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto asin(Matrix&& mat)
+constexpr auto asin(Matrix&& mat) noexcept
 {
   return map(Asin{}, std::forward<Matrix>(mat));
 }
@@ -503,7 +503,7 @@ constexpr auto asin(Matrix&& mat)
 /// @brief Compute the element-wise inverse cosine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto acos(Matrix&& mat)
+constexpr auto acos(Matrix&& mat) noexcept
 {
   return map(Acos{}, std::forward<Matrix>(mat));
 }
@@ -511,7 +511,7 @@ constexpr auto acos(Matrix&& mat)
 /// @brief Compute the element-wise inverse tangent of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto atan(Matrix&& mat)
+constexpr auto atan(Matrix&& mat) noexcept
 {
   return map(Atan{}, std::forward<Matrix>(mat));
 }
@@ -521,7 +521,7 @@ constexpr auto atan(Matrix&& mat)
 /// @brief Compute the element-wise hyperbolic sine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto sinh(Matrix&& mat)
+constexpr auto sinh(Matrix&& mat) noexcept
 {
   return map(Sinh{}, std::forward<Matrix>(mat));
 }
@@ -529,7 +529,7 @@ constexpr auto sinh(Matrix&& mat)
 /// @brief Compute the element-wise hyperbolic cosine of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto cosh(Matrix&& mat)
+constexpr auto cosh(Matrix&& mat) noexcept
 {
   return map(Cosh{}, std::forward<Matrix>(mat));
 }
@@ -537,7 +537,7 @@ constexpr auto cosh(Matrix&& mat)
 /// @brief Compute the element-wise hyperbolic tangent of the matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto tanh(Matrix&& mat)
+constexpr auto tanh(Matrix&& mat) noexcept
 {
   return map(Tanh{}, std::forward<Matrix>(mat));
 }
@@ -546,7 +546,7 @@ constexpr auto tanh(Matrix&& mat)
 /// matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto asinh(Matrix&& mat)
+constexpr auto asinh(Matrix&& mat) noexcept
 {
   return map(Asinh{}, std::forward<Matrix>(mat));
 }
@@ -555,7 +555,7 @@ constexpr auto asinh(Matrix&& mat)
 /// matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto acosh(Matrix&& mat)
+constexpr auto acosh(Matrix&& mat) noexcept
 {
   return map(Acosh{}, std::forward<Matrix>(mat));
 }
@@ -564,7 +564,7 @@ constexpr auto acosh(Matrix&& mat)
 /// matrix @p mat.
 template<viewable_matrix Matrix>
   requires numeric_matrix<Matrix>
-constexpr auto atanh(Matrix&& mat)
+constexpr auto atanh(Matrix&& mat) noexcept
 {
   return map(Atanh{}, std::forward<Matrix>(mat));
 }

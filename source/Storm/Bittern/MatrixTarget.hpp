@@ -171,6 +171,15 @@ public:
   /// @brief Construct a matrix target view.
   constexpr explicit TargetMatrixView(Matrix mat) : mat_{std::move(mat)} {}
 
+  /// @brief Assign the current matrix elements from matrix @p mat.
+  template<matrix OtherMatrix>
+    requires assignable_matrix<TargetMatrixView, OtherMatrix> &&
+             (!std::same_as<TargetMatrixView, std::remove_cvref_t<OtherMatrix>>)
+  constexpr TargetMatrixView& operator=(OtherMatrix&& mat) noexcept
+  {
+    return this->assign(std::forward<OtherMatrix>(mat));
+  }
+
   /// @brief Get the matrix shape.
   constexpr auto shape() const noexcept
   {
@@ -178,15 +187,22 @@ public:
   }
 
   /// @brief Get the matrix element at @p indices.
+  /// @{
   template<class... Indices>
     requires compatible_matrix_indices_v<TargetMatrixView, Indices...>
-  constexpr auto operator()(Indices... indices) const noexcept
+  constexpr auto& operator()(Indices... indices) noexcept
   {
     STORM_ASSERT_(in_range(shape(), indices...), "Indices are out of range!");
     return mat_(indices...);
   }
-
-  using TargetMatrixInterface<TargetMatrixView<Matrix>>::operator=;
+  template<class... Indices>
+    requires compatible_matrix_indices_v<TargetMatrixView, Indices...>
+  constexpr const auto& operator()(Indices... indices) const noexcept
+  {
+    STORM_ASSERT_(in_range(shape(), indices...), "Indices are out of range!");
+    return mat_(indices...);
+  }
+  /// @}
 
 }; // class TargetMatrixView
 
@@ -196,7 +212,7 @@ TargetMatrixView(Matrix) -> TargetMatrixView<matrix_view_t<Matrix>>;
 /// @brief Wrap the output matrix @p mat as a target.
 template<viewable_matrix Matrix>
   requires output_matrix<Matrix>
-constexpr auto as_target(Matrix&& mat)
+constexpr auto to_target(Matrix&& mat) noexcept
 {
   return TargetMatrixView{std::forward<Matrix>(mat)};
 }
