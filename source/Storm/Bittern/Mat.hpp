@@ -112,11 +112,11 @@ public:
 
   /// @brief Construct a matrix with element array @p elems.
   /// @{
-  constexpr explicit DenseMatrix(Elem (&&elems)[Extent])
+  constexpr explicit DenseMatrix(array_rref_t<Elem, Extent> elems)
       : elems_{std::to_array(std::move(elems))}
   {
   }
-  constexpr explicit DenseMatrix(const Elem (&elems)[Extent])
+  constexpr explicit DenseMatrix(array_cref_t<Elem, Extent> elems)
       : elems_{std::to_array(elems)}
   {
   }
@@ -124,12 +124,12 @@ public:
 
   /// @brief Assign the current matrix elements from array @p elems.
   /// @{
-  constexpr DenseMatrix& operator=(Elem (&&elems)[Extent]) noexcept
+  constexpr DenseMatrix& operator=(array_rref_t<Elem, Extent> elems) noexcept
   {
     elems_ = std::to_array(std::move(elems));
     return *this;
   }
-  constexpr DenseMatrix& operator=(const Elem (&elems)[Extent]) noexcept
+  constexpr DenseMatrix& operator=(array_cref_t<Elem, Extent> elems) noexcept
   {
     elems_ = std::to_array(elems);
     return *this;
@@ -219,11 +219,11 @@ public:
 
   /// @brief Construct a matrix with slice array @p slices.
   /// @{
-  constexpr explicit DenseMatrix(Slice_ (&&slices)[Extent])
+  constexpr explicit DenseMatrix(array_rref_t<Slice_, Extent> slices)
       : slices_{std::to_array(std::move(slices))}
   {
   }
-  constexpr explicit DenseMatrix(const Slice_ (&slices)[Extent])
+  constexpr explicit DenseMatrix(array_cref_t<Slice_, Extent> slices)
       : slices_{std::to_array(slices)}
   {
   }
@@ -231,12 +231,12 @@ public:
 
   /// @brief Assign the current matrix elements from array @p slices.
   /// @{
-  constexpr DenseMatrix& operator=(Slice_ (&&slices)[Extent]) noexcept
+  constexpr DenseMatrix& operator=(array_rref_t<Slice_, Extent> slices) noexcept
   {
     slices_ = std::to_array(std::move(slices));
     return *this;
   }
-  constexpr DenseMatrix& operator=(const Slice_ (&slices)[Extent]) noexcept
+  constexpr DenseMatrix& operator=(array_cref_t<Slice_, Extent> slices) noexcept
   {
     slices_ = std::to_array(slices);
     return *this;
@@ -249,7 +249,7 @@ public:
                                       matrix_t<Subslices[SecondExtent_]>> &&
               ...)
   constexpr explicit DenseMatrix(
-      const Subslices (&... subslices)[SecondExtent_])
+      array_cref_t<Subslices, SecondExtent_>... subslices)
       : slices_{Slice_{to_matrix(subslices)}...}
   {
   }
@@ -296,21 +296,21 @@ DenseMatrix(Slices&&...)
                                 common_shape_t<matrix_shape_t<Slices>...>>>;
 
 template<scalar Elem, size_t Extent>
-DenseMatrix(const Elem (&)[Extent])
+DenseMatrix(array_cref_t<Elem, Extent>)
     -> DenseMatrix<std::remove_cvref_t<Elem>, fixed_shape_t<Extent>>;
 template<matrix Slice, size_t Extent>
-DenseMatrix(const Slice (&)[Extent])
+DenseMatrix(array_cref_t<Slice, Extent>)
     -> DenseMatrix<matrix_element_t<Slice>,
                    cat_shapes_t<fixed_shape_t<Extent>, matrix_shape_t<Slice>>>;
 
 template<scalar... Elems, size_t SecondExtent>
   requires (sizeof...(Elems) > 1)
-DenseMatrix(const Elems (&... _)[SecondExtent]...)
+DenseMatrix(array_cref_t<Elems, SecondExtent>...)
     -> DenseMatrix<std::common_type_t<Elems...>, //
                    fixed_shape_t<sizeof...(Elems), SecondExtent>>;
 template<matrix... Slices, size_t SecondExtent>
   requires (sizeof...(Slices) > 1)
-DenseMatrix(const Slices (&... _)[SecondExtent])
+DenseMatrix(array_cref_t<Slices, SecondExtent>...)
     -> DenseMatrix<std::common_type_t<matrix_element_t<Slices>...>,
                    cat_shapes_t<fixed_shape_t<sizeof...(Slices), SecondExtent>,
                                 common_shape_t<matrix_shape_t<Slices>...>>>;

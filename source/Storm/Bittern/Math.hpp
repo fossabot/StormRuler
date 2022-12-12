@@ -22,6 +22,7 @@
 
 #include <Storm/Base.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <concepts>

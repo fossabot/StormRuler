@@ -240,10 +240,6 @@ using real_t = double;
 /// @brief Complex floating-point type.
 using complex_t = std::complex<real_t>;
 
-/// @brief Size type constant.
-template<size_t Value>
-using size_t_constant = std::integral_constant<size_t, Value>;
-
 /// @brief size_t literal.
 constexpr size_t operator""_sz(unsigned long long arg) noexcept
 {
@@ -255,6 +251,22 @@ constexpr real_t operator""_dp(long double arg) noexcept
 {
   return static_cast<real_t>(arg);
 }
+
+// -----------------------------------------------------------------------------
+
+/// @brief Size type constant.
+template<size_t Value>
+using size_t_constant = std::integral_constant<size_t, Value>;
+
+/// @brief Raw array type.
+/// @{
+template<class Type, size_t Size>
+using array_ref_t = Type (&)[Size];
+template<class Type, size_t Size>
+using array_cref_t = array_ref_t<const Type, Size>;
+template<class Type, size_t Size>
+using array_rref_t = Type (&&)[Size];
+/// @}
 
 // -----------------------------------------------------------------------------
 
